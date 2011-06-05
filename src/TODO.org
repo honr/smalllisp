@@ -1,0 +1,42 @@
+* BUGs/FIXMEs
+** quote, '
+** symbols, '
+** keywords, :
+** more specials
+*** loop, recur
+*** for, doseq
+*** iterate
+*** read-string
+*** with-out-str
+*** *in*, *out*, *err*, *command-line-args*
+*** partition
+*** take-while
+*** take
+*** printf
+*** format
+*** fd io
+    - fopen
+    - fread
+    - fwrite
+    - fclose
+    - slurp
+    - spit
+    - line-seq
+** struct
+
+* short term features
+
+** Socket interface:
+   - TCP listener and server. Design a whole DSL for socket interfaces
+** Web interface:
+   - HTML5 and SVG generation
+   - javascript generation
+** Multi-threading:
+   - memory management, garbage collection, reentrant, etc.
+   - use futexes
+** Structures
+   - look into protobuffs
+   - parse headers or otherwise get the signature of functions
+** dynamic libraries
+   - dlopen, dlsym, etc.
+
