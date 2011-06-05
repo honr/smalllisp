@@ -1,0 +1,9 @@
+
+* What is _smalllisp?
+  
+  _smalllisp is a small lisp.  Currently it is interpretted, and there
+  is no native-code or byte-code generation involved.
+
+* Isn't 'smalllisp' a lame name?
+  We are aware of this issue.  This project is so tiny that it didn't
+  even deserve a proper name.  If it ever becomes useful we can address that.
