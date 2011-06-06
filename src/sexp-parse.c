@@ -1,7 +1,6 @@
 #include "sexp-parse.h"
 #include "cons.h"
 #include "box.h"
-#include "htrie.h"
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -24,6 +23,7 @@
 #define ACTION_BEGIN  0x04	// start the chunk.
 #define ACTION_TERM   0x08	// terminate the chunk.
 #define ACTION_PAREN  0x10	// paren
+#define ACTION_PREFIX 0x20	// paren
 #define ACTION_UP     0x80	// paren/... up
 
 #define TOKEN_STRING  'S'
@@ -32,57 +32,54 @@
 #define TOKEN_NUMBER_MAYBE  'M'
 // could also be '(', ')'.
 
-void
-sexp_parse_process_token (struct cons **stackp, struct bin **p_symbols,
-			  char specifier, char *token)
+inline void
+_sexp_parse__open (struct cons **stackp, struct bin **p_symbols,
+		   char specifier)
 {
-  if (specifier == '(')
+  *stackp = cons_alloc (cons_alloc (NULL, NULL), *stackp);
+  if (specifier == '[')
     {
-      *stackp = cons_alloc (cons_alloc (NULL, NULL), *stackp);
-    }
-  else if (specifier == '[')
-    {
-      *stackp = cons_alloc (cons_alloc (NULL, NULL), *stackp);
       cons_insert_tail ((*stackp)->first, string_alloc ("vector"));
     }
   else if (specifier == '{')
     {
-      *stackp = cons_alloc (cons_alloc (NULL, NULL), *stackp);
       cons_insert_tail ((*stackp)->first, string_alloc ("hash-map"));
     }
-  else if ((specifier == ')') || (specifier == ']') || (specifier == '}'))
+  else if (specifier == '\'')
     {
-      struct cons *stack = *stackp;
-      struct cons *c = cons_alloc (((struct cons *) stack->first)->first,
-				   &Q_CONS);
-      free (stack->first);
-      *stackp = cons_pop (stack);
-      cons_insert_tail ((*stackp)->first, c);
+      cons_insert_tail ((*stackp)->first, symbol_alloc (p_symbols, "quote"));
     }
-  else if (specifier == TOKEN_SYMBOL)
+  else if (specifier == '`')
     {
-      struct symbol *sym = htrie_get (*p_symbols, token);
-      if (!sym)
-	{
-	  sym = malloc (sizeof (struct symbol));
-	  sym->name = token;
-	  sym->vals = NULL;
-	  sym->parent = NULL;	// should be *ns*.
-	  htrie_assoc (p_symbols, strdup (token), sym);
-	}
-
-      struct cons *result;
-      if (*token == ':')
-	{
-	  result = cons_alloc (sym, &Q_KEYWORD);
-	}
-      else
-	{
-	  result = cons_alloc (sym, &Q_SYMBOL);
-	}
-      cons_insert_tail ((*stackp)->first, result);
+      cons_insert_tail ((*stackp)->first,
+			symbol_alloc (p_symbols, "quote-eval"));
     }
+  else if (specifier == '~')
+    {
+      cons_insert_tail ((*stackp)->first,
+			symbol_alloc (p_symbols, "unquote"));
+    }
+}
 
+inline void
+_sexp_parse__close (struct cons **stackp, struct bin **p_symbols)
+{
+  struct cons *stack = *stackp;
+  struct cons *c = cons_alloc (((struct cons *) stack->first)->first,
+			       &Q_CONS);
+  free (stack->first);
+  *stackp = cons_pop (stack);
+  cons_insert_tail ((*stackp)->first, c);
+}
+
+inline void
+_sexp_parse__token (struct cons **stackp, struct bin **p_symbols,
+		    char specifier, char *token)
+{
+  if (specifier == TOKEN_SYMBOL)
+    {
+      cons_insert_tail ((*stackp)->first, symbol_alloc (p_symbols, token));
+    }
   else if (specifier == TOKEN_STRING)
     {
       cons_insert_tail ((*stackp)->first, string_alloc (token));
@@ -98,16 +95,50 @@ sexp_parse_process_token (struct cons **stackp, struct bin **p_symbols,
     }
 }
 
+struct longstack {
+  struct longstack* next;
+  union {
+    long z8;
+    double y8;
+    char ch[8];
+    void* pvoid;
+  } val;
+};
+
+inline struct longstack* 
+longstack_alloc (long val, struct longstack* next)
+{
+  struct longstack *c = malloc (sizeof (struct longstack));
+  c->val.z8 = val;
+  c->next = next;
+  return c;
+}
+
+inline struct longstack *
+longstack_pop (struct longstack *c)
+{
+  // frees the first cell, returns the rest.
+  struct longstack *r;
+  if (c)
+    {
+      r = c->next;
+      free (c);
+      return r;
+    }
+  return NULL;
+}
+
 struct cons *
 sexp_parse_str (struct bin **p_symbols, char *buf)
 {
   struct cons *stack = cons_alloc (cons_alloc (NULL, NULL), NULL);
   char c, *buf_cur, *bufout_cur, *bufout = malloc (BUFF_SIZE);
   char state, action, specifier = 0, specifier_next, paren_type;
-  int level;
+  struct longstack *parenstack, *prefixstack;
   for (buf_cur = buf, bufout_cur = bufout,	// set buffer cursors
        state = STATE_SPACE,	// initial state: whitespace
-       level = 0,		// paren level
+       parenstack = NULL,       // start with empty stack.
+       prefixstack = NULL,    // stack to track number of prefixes
        c = ' ';			// anything other than 0.
        c;			// break after character 0 is sighted.
        ++buf_cur)
@@ -118,7 +149,7 @@ sexp_parse_str (struct bin **p_symbols, char *buf)
       // State Transitions:
       if (c == 0)
 	{
-	  if (level != 0)
+	  if (parenstack)
 	    {
 	      fprintf (stderr, "Error: EOF while reading.\n");
 	      return NULL;
@@ -206,9 +237,28 @@ sexp_parse_str (struct bin **p_symbols, char *buf)
 	    {
 	      action |= ACTION_FLUSH | ACTION_TERM;
 	    }
-	  paren_type = c;
+	  // paren_type = c;
+	  if (c == ')')
+	    { paren_type = '('; }
+	  else if (c == ']')
+	    { paren_type = '['; }
+	  else if (c == '}')
+	    { paren_type = '{'; }
+	  else
+	    { fprintf (stderr, "Error: unexpected paren type: %c\n", paren_type);
+	      exit (4); }
 	  state = STATE_SPACE;
 	}
+      /* else if ((c == '\'') || (c == '`') || (c == '~'))
+	{
+	  action = ACTION_PASS | ACTION_PAREN | ACTION_UP | ACTION_PREFIX;
+	  if (state & STATE_TOKEN)
+	    {
+	      action |= ACTION_FLUSH | ACTION_TERM;
+	    }
+	  paren_type = c;
+	  state = STATE_SPACE;
+	  }*/
       else
 	{
 	  if ((c == ',') || isspace (c))
@@ -272,7 +322,8 @@ sexp_parse_str (struct bin **p_symbols, char *buf)
 		}
 	    }
 
-	  sexp_parse_process_token (&stack, p_symbols, specifier, s);
+	  _sexp_parse__token (&stack, p_symbols, specifier, s);
+	  // _sexp_parse__close (&stack, p_symbols);
 	}
       if (action & ACTION_BEGIN)
 	{
@@ -286,13 +337,19 @@ sexp_parse_str (struct bin **p_symbols, char *buf)
 	{
 	  if (action & ACTION_UP)
 	    {
-	      sexp_parse_process_token (&stack, p_symbols, paren_type, NULL);
-	      ++level; // better be ++level[paren_type]
+	      _sexp_parse__open (&stack, p_symbols, paren_type);
+	      parenstack = longstack_alloc ((long) paren_type, parenstack);
 	    }
 	  else
 	    {
-	      sexp_parse_process_token (&stack, p_symbols, paren_type, NULL);
-	      --level; // better be ++level[paren_type]
+	      _sexp_parse__close (&stack, p_symbols);
+	      if ((char) parenstack->val.z8 != paren_type)
+		{
+		  fprintf (stderr, "Error: mismatched parenthesis %c vs %c\n",
+			   (char) parenstack->val.z8, paren_type);
+		  exit (1);
+		}
+	      parenstack = longstack_pop (parenstack);
 	    }
 	}
     }

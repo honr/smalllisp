@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include "cons.h"
 #include "box.h"
-#include "htrie.h"
 
 /*
 struct cons *

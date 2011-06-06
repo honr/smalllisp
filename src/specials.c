@@ -16,7 +16,7 @@ _special_list (struct cons *params)
 
 struct cons *
 _special_inc (struct cons *params)
-{  /* Only supports long and double for now. */
+{				/* Only supports long and double for now. */
   struct cons *item = params->first;
   if (item->next == &Q_z8)
     {
@@ -35,7 +35,7 @@ _special_inc (struct cons *params)
 
 struct cons *
 _special_dec (struct cons *params)
-{  /* Only supports long and double for now. */
+{				/* Only supports long and double for now. */
   struct cons *item = params->first;
   if (item->next == &Q_z8)
     {
@@ -54,7 +54,7 @@ _special_dec (struct cons *params)
 
 struct cons *
 _special_plus (struct cons *params)
-{ // fn.
+{				// fn.
   // only supporting long, double and rgb3 for now.
   struct cons *item;
   long result_long = 0;
@@ -456,7 +456,8 @@ _special_println (struct cons *params)
 }
 
 char *
-__special_str__box_to_str (char **p_buff_cur, char *buff_limit, struct cons *c)
+__special_str__box_to_str (char **p_buff_cur, char *buff_limit,
+			   struct cons *c)
 {
   if (!c)
     {
@@ -471,7 +472,8 @@ __special_str__box_to_str (char **p_buff_cur, char *buff_limit, struct cons *c)
 	  struct cons *c_sub;
 	  for (c_sub = (struct cons *) c->first; c_sub; c_sub = c_sub->next)
 	    {
-	      __special_str__box_to_str (p_buff_cur, buff_limit, c_sub->first);
+	      __special_str__box_to_str (p_buff_cur, buff_limit,
+					 c_sub->first);
 	      if (c_sub->next)
 		{
 		  strcat_rf (p_buff_cur, buff_limit, " ");
@@ -570,7 +572,7 @@ _special_spth (struct cons *params)
   for (; params; params = params->next)
     {
       __special_str__box_to_str (&buff_cur, buff_limit,
-			    interp_eval_box (params->first));
+				 interp_eval_box (params->first));
       if (params->next)
 	{
 	  strcat_rf (&buff_cur, buff_limit, "/");
@@ -678,7 +680,7 @@ _special_quote_eval (struct cons *params)
 
 	  if (consp (in_cur_first))
 	    {
-	      if (!in_cur_first->first) // empty list
+	      if (!in_cur_first->first)	// empty list
 		{
 		  // cons_insert_tail (out_stack->first, in_cur_first);
 		  cons_insert_tail (out_stack->first, NULL);
@@ -696,8 +698,8 @@ _special_quote_eval (struct cons *params)
 		       &Q_VAL_UNQUOTE))
 		    {
 		      cons_insert_tail (out_stack->first,
-					interp_eval_box (subcons->next->
-							      first));
+					interp_eval_box (subcons->
+							 next->first));
 		      in_cur = in_cur->next;
 		    }
 		  else if (symbolp (subcons_first) &&
@@ -718,7 +720,8 @@ _special_quote_eval (struct cons *params)
 		    {
 		      in_stack = cons_alloc (in_cur->next, in_stack);
 		      in_cur = subcons;
-		      out_stack = cons_alloc (cons_alloc (NULL, NULL), out_stack);
+		      out_stack =
+			cons_alloc (cons_alloc (NULL, NULL), out_stack);
 		    }
 		}
 	    }
@@ -734,7 +737,9 @@ _special_quote_eval (struct cons *params)
 	  in_stack = cons_pop (in_stack);
 	  if (in_stack)
 	    {
-	      struct cons *res = cons_alloc (((struct cons *) out_stack->first)->first, &Q_CONS);
+	      struct cons *res =
+		cons_alloc (((struct cons *) out_stack->first)->first,
+			    &Q_CONS);
 	      free (out_stack->first);
 	      out_stack = cons_pop (out_stack);
 	      cons_insert_tail (out_stack->first, res);
@@ -763,7 +768,7 @@ struct cons *
 _special_rest (struct cons *params)
 {
   struct cons *param = params->first;
-  if (consp(param))
+  if (consp (param))
     {
       return cons_alloc ((cons_unbox (param))->next, &Q_CONS);
     }
@@ -774,13 +779,13 @@ struct cons *
 _special_nth (struct cons *params)
 {
   struct cons *param = params->first;
-  if (consp(param))
+  if (consp (param))
     {
       long n = long_unbox (params->next->first);
-      struct cons* p;
+      struct cons *p;
       for (p = cons_unbox (param); p && n; p = p->next, --n);
       if (p)
-	{ 
+	{
 	  return p->first;
 	}
     }
@@ -1375,7 +1380,7 @@ _special_ns (struct cons *params)
 
 char *
 __special_html_gen__box_to_str (char **p_buff_cur, char *buff_limit,
-			   struct cons *c)
+				struct cons *c)
 {
   if (c)
     {
@@ -1425,11 +1430,11 @@ __special_html_gen__box_to_str (char **p_buff_cur, char *buff_limit,
 }
 
 char *__special_html_gen__form_to_str (char **p_buff_cur, char *buff_limit,
-				  struct cons *c);
+				       struct cons *c);
 
 char *
 __special_html_gen__unit_to_str (char **p_buff_cur, char *buff_limit,
-			    struct cons *c)
+				 struct cons *c)
 {
   struct cons *tag = c->first;
   strcat_rf (p_buff_cur, buff_limit, "<");
@@ -1468,7 +1473,7 @@ __special_html_gen__unit_to_str (char **p_buff_cur, char *buff_limit,
 
 char *
 __special_html_gen__form_to_str (char **p_buff_cur, char *buff_limit,
-			    struct cons *c)
+				 struct cons *c)
 {
   if (c)
     {
@@ -1534,7 +1539,7 @@ _special_html_gen (struct cons *params)
   for (; params; params = params->next)
     {
       __special_html_gen__form_to_str (&buff_cur, buff_limit,
-				  interp_eval_box (params->first));
+				       interp_eval_box (params->first));
     }
 
   if (buff_cur)
@@ -1552,137 +1557,156 @@ _special_html_gen (struct cons *params)
     }
 }
 
-struct cons*
-_special_do (struct cons* params)
+struct cons *
+_special_do (struct cons *params)
 {
   // (do form1 form2 form3)
   return interp_eval_progn (params);
 }
 
-struct cons*
-_special_funcall (struct cons* params)
+struct cons *
+_special_funcall (struct cons *params)
 {
   // (apply f cons)
-  struct cons* f = interp_eval_box (params->first);
+  struct cons *f = interp_eval_box (params->first);
   return interp_call (f, params->next);
 }
 
-struct cons*
-_special_eval (struct cons* params)
+struct cons *
+_special_eval (struct cons *params)
 {
   // (eval 'form1 'form2 'form3)
   return interp_eval_progn (params);
 }
 
-struct cons*
-_special_filter (struct cons* params)
+struct cons *
+_special_filter (struct cons *params)
 {
-  struct cons* f = params->first;
+  struct cons *f = params->first;
   params = params->next;
   if (!params)
-    { 
-      fprintf (stderr, "Error: too few arguments to `filter'\n"); 
+    {
+      fprintf (stderr, "Error: too few arguments to `filter'\n");
       return NULL;
     }
-  struct cons* curs = cons_alloc (NULL, NULL);
-  struct cons* l = cons_unbox (params->first); // must be a cons.
-  struct cons* args;
+  struct cons *curs = cons_alloc (NULL, NULL);
+  struct cons *l = cons_unbox (params->first);	// must be a cons.
+  struct cons *args;
   for (; l; l = l->next)
-    { 
+    {
       args = cons_alloc (l->first, NULL);
       if (interp_call_evaledparams (f, args))
-	{ cons_insert_tail (curs, l->first); }
+	{
+	  cons_insert_tail (curs, l->first);
+	}
       free (args);
     }
-  struct cons* result = cons_alloc (curs->first, &Q_CONS);
+  struct cons *result = cons_alloc (curs->first, &Q_CONS);
   free (curs);
   return result;
 }
 
-struct cons*
-_special_map (struct cons* params)
-{ // fn
+struct cons *
+_special_map (struct cons *params)
+{				// fn
   // (map f cons1 cons2 cons3)
 
-  struct cons* f = params->first;
+  struct cons *f = params->first;
   params = params->next;
   if (!params)
-    { fprintf (stderr, "Error: too few arguments to `map'\n"); 
-      return NULL; }
+    {
+      fprintf (stderr, "Error: too few arguments to `map'\n");
+      return NULL;
+    }
 
   int i, n = cons_count (params);
-  struct cons** params_a;
-  struct cons** args;
+  struct cons **params_a;
+  struct cons **args;
 
   params_a = calloc (n, sizeof (struct cons));
   for (i = 0; params; params = params->next)
-    { params_a[i++] = cons_unbox (params->first); }
-  
+    {
+      params_a[i++] = cons_unbox (params->first);
+    }
+
   // *args is both an array and a linked list.
   args = calloc (n, sizeof (struct cons));
   args[n - 1] = cons_alloc (NULL, NULL);
-  for (i = n - 1; i ; --i)
-    { args[i - 1] = cons_alloc (NULL, args[i]); }
+  for (i = n - 1; i; --i)
+    {
+      args[i - 1] = cons_alloc (NULL, args[i]);
+    }
 
-  struct cons* curs = cons_alloc (NULL, NULL);
+  struct cons *curs = cons_alloc (NULL, NULL);
   i = 0;
   while (1)
-    { if (!params_a[i])
-	{ break; }
+    {
+      if (!params_a[i])
+	{
+	  break;
+	}
       args[i]->first = params_a[i]->first;
       params_a[i] = params_a[i]->next;
-      
+
       if ((++i) == n)
-	{ i = 0;
+	{
+	  i = 0;
 	  cons_insert_tail (curs, interp_call_evaledparams (f, *args));
 	}
     }
-  struct cons* result = cons_alloc (curs->first, &Q_CONS);
+  struct cons *result = cons_alloc (curs->first, &Q_CONS);
   free (curs);
   free (args);
   free (params_a);
   return result;
 }
 
-struct cons*
-_special_apply (struct cons* params)
-{ // fn
+struct cons *
+_special_apply (struct cons *params)
+{				// fn
   // (apply f x1 x2 cons)
-  struct cons* f = params->first;
+  struct cons *f = params->first;
   params = params->next;
   if (!params || !params->next)
-    { return interp_call_evaledparams (f, cons_unbox (params->first)); }
+    {
+      return interp_call_evaledparams (f, cons_unbox (params->first));
+    }
   else
     {
-      struct cons* args_curs = cons_alloc (NULL, NULL);
-      for (;params->next; params=params->next)
-	{ cons_insert_tail (args_curs, params->first); }
+      struct cons *args_curs = cons_alloc (NULL, NULL);
+      for (; params->next; params = params->next)
+	{
+	  cons_insert_tail (args_curs, params->first);
+	}
       args_curs->next->next = cons_unbox (params->first);
-      struct cons* args = args_curs->first;
+      struct cons *args = args_curs->first;
       free (args_curs);
       return interp_call_evaledparams (f, args);
     }
   return NULL;
 }
 
-struct cons*
-_special_reduce (struct cons* params)
-{ // fn
+struct cons *
+_special_reduce (struct cons *params)
+{				// fn
   // (reduce f init-value cons)
 
-  struct cons* f = params->first;
+  struct cons *f = params->first;
   params = params->next;
   if (!params || !params->next)
-    { fprintf (stderr, "Error: too few arguments to `reduce'\n"); }
+    {
+      fprintf (stderr, "Error: too few arguments to `reduce'\n");
+    }
   /* { return interp_call_evaledparams (f, cons_unbox (params->first)); } */
   else
     {
-      struct cons* result = params->first;
-      struct cons* l = cons_unbox (params->next->first); // must be a cons.
+      struct cons *result = params->first;
+      struct cons *l = cons_unbox (params->next->first);	// must be a cons.
       for (; l; l = l->next)
-	{ 
-	  struct cons* args = cons_alloc (result, cons_alloc (l->first, NULL));
-	  result = interp_call_evaledparams (f, args); 
+	{
+	  struct cons *args =
+	    cons_alloc (result, cons_alloc (l->first, NULL));
+	  result = interp_call_evaledparams (f, args);
 	  free (args->next);
 	  free (args);
 	}
@@ -1691,195 +1715,246 @@ _special_reduce (struct cons* params)
   return NULL;
 }
 
-struct cons*
-_special_or (struct cons* params)
+struct cons *
+_special_or (struct cons *params)
 {
-  struct cons * result;
-  for (result = NULL;
-       !result && params;
-       params = params->next)
-    { result = interp_eval_box (params->first); }
+  struct cons *result;
+  for (result = NULL; !result && params; params = params->next)
+    {
+      result = interp_eval_box (params->first);
+    }
   return result;
 }
 
-struct cons*
-_special_and (struct cons* params)
+struct cons *
+_special_and (struct cons *params)
 {
-  struct cons * result;
-  for (result = &Q_VAL_NONNIL;
-       result && params;
-       params = params->next)
-    { result = interp_eval_box (params->first); }
+  struct cons *result;
+  for (result = &Q_VAL_NONNIL; result && params; params = params->next)
+    {
+      result = interp_eval_box (params->first);
+    }
   return result;
 }
 
-struct timespec 
+struct timespec
 gettimeofday_ts ()
-  { struct timeval now_tv;
-    gettimeofday (&now_tv, NULL);
-    struct timespec now_ts = {now_tv.tv_sec, (long) now_tv.tv_usec * 1000};
-    return now_ts; }
+{
+  struct timeval now_tv;
+  gettimeofday (&now_tv, NULL);
+  struct timespec now_ts = { now_tv.tv_sec, (long) now_tv.tv_usec * 1000 };
+  return now_ts;
+}
 
 int inline
 timespec_compare (struct timespec a, struct timespec b)
-  { if      (a.tv_sec > b.tv_sec)   { return  1; }
-    else if (a.tv_sec < b.tv_sec)   { return -1; }
-    else if (a.tv_nsec > b.tv_nsec) { return  1; }
-    else if (a.tv_nsec < b.tv_nsec) { return -1; }
-    else                            { return  0; }}
+{
+  if (a.tv_sec > b.tv_sec)
+    {
+      return 1;
+    }
+  else if (a.tv_sec < b.tv_sec)
+    {
+      return -1;
+    }
+  else if (a.tv_nsec > b.tv_nsec)
+    {
+      return 1;
+    }
+  else if (a.tv_nsec < b.tv_nsec)
+    {
+      return -1;
+    }
+  else
+    {
+      return 0;
+    }
+}
 
 struct timespec inline
 timespec_plus (struct timespec a, struct timespec b)
-  { struct timespec c = {a.tv_sec + b.tv_sec, a.tv_nsec + b.tv_nsec};
-    if (c.tv_nsec >= 1000000000)
-      { c.tv_nsec -= 1000000000;
-	c.tv_sec ++; }
-    return c; }
+{
+  struct timespec c = { a.tv_sec + b.tv_sec, a.tv_nsec + b.tv_nsec };
+  if (c.tv_nsec >= 1000000000)
+    {
+      c.tv_nsec -= 1000000000;
+      c.tv_sec++;
+    }
+  return c;
+}
 
 struct timespec inline
 timespec_minus (struct timespec a, struct timespec b)
-  { struct timespec c = {a.tv_sec - b.tv_sec, a.tv_nsec - b.tv_nsec};
-    if (c.tv_nsec < 0)
-      { c.tv_nsec += 1000000000;
-	c.tv_sec --; }
-    else if (c.tv_nsec >= 1000000000)
-      { c.tv_nsec -= 1000000000;
-	c.tv_sec ++; }
-    return c; }
+{
+  struct timespec c = { a.tv_sec - b.tv_sec, a.tv_nsec - b.tv_nsec };
+  if (c.tv_nsec < 0)
+    {
+      c.tv_nsec += 1000000000;
+      c.tv_sec--;
+    }
+  else if (c.tv_nsec >= 1000000000)
+    {
+      c.tv_nsec -= 1000000000;
+      c.tv_sec++;
+    }
+  return c;
+}
 
 struct timespec inline
 timespec_from_ms (time_t ms)
-  { struct timespec ts = {ms / 1000, (long) (ms % 1000) * 1000000};
-    return ts; }
+{
+  struct timespec ts = { ms / 1000, (long) (ms % 1000) * 1000000 };
+  return ts;
+}
 
 char *
 timespec_to_str (struct timespec ts)
-  { char * s = (char *) malloc (256);
-    sprintf (s, "%ld.%ld", ts.tv_sec, ts.tv_nsec);
-    return s; }
+{
+  char *s = (char *) malloc (256);
+  sprintf (s, "%ld.%ld", ts.tv_sec, ts.tv_nsec);
+  return s;
+}
 
-struct cons*
-_special_time (struct cons* params)
+struct cons *
+_special_time (struct cons *params)
 {
   // (time form1 form2)
-  struct cons* result = NULL;
+  struct cons *result = NULL;
   struct timespec cur_time, new_time;
-  for (cur_time = gettimeofday_ts (); 
-       params; 
-       params = params->next, cur_time = new_time)
-    { result = interp_eval_box (params->first);
+  for (cur_time = gettimeofday_ts ();
+       params; params = params->next, cur_time = new_time)
+    {
+      result = interp_eval_box (params->first);
       new_time = gettimeofday_ts ();
-      fprintf (stderr, "Elapsed time: %s\n", 
-	       timespec_to_str (timespec_minus (new_time, 
-						cur_time))); }
+      fprintf (stderr, "Elapsed time: %s\n",
+	       timespec_to_str (timespec_minus (new_time, cur_time)));
+    }
   return result;
 }
 
 /** (exec "/bin/ls" (list "ls" "-la") */
 
-struct cons*
-_special_exec (struct cons* params)
-{ 				
-  char* program = string_unbox (params->first);
+struct cons *
+_special_exec (struct cons *params)
+{
+  char *program = string_unbox (params->first);
   int i, n;
-  char** argv = malloc (sizeof (char*) * 2);
+  char **argv = malloc (sizeof (char *) * 2);
   argv[0] = program;
   argv[1] = 0;
-  char** envp = NULL;
+  char **envp = NULL;
   params = params->next;
   if (params)
     {
-      struct cons* l;
+      struct cons *l;
       if (consp (params->first))
 	{
-	  l = cons_unbox (params->first); 
-	  params = params->next; }
+	  l = cons_unbox (params->first);
+	  params = params->next;
+	}
       else
 	{
-	  struct cons* curs = cons_alloc (NULL, NULL);
-      	  for (; params && !consp(params->first); params = params->next)
+	  struct cons *curs = cons_alloc (NULL, NULL);
+	  for (; params && !consp (params->first); params = params->next)
 	    // { cons_insert_tail (curs, string_alloc (keyword_name)); }
-	    { cons_insert_tail (curs, params->first); }
+	    {
+	      cons_insert_tail (curs, params->first);
+	    }
 	  l = curs->first;
 	  free (curs);
 	}
-      
+
       n = cons_count (l);
       free (argv);
-      argv = malloc (sizeof (char*) * (n + 1));
-      for (i = 0; l; ++ i, l = l->next)
-	{ struct cons* item = l->first;
-	  char* item_str;
+      argv = malloc (sizeof (char *) * (n + 1));
+      for (i = 0; l; ++i, l = l->next)
+	{
+	  struct cons *item = l->first;
+	  char *item_str;
 	  if (item->next == &Q_STRING)
-	    { item_str = string_unbox (item); }
+	    {
+	      item_str = string_unbox (item);
+	    }
 	  else if (item->next == &Q_KEYWORD)
-	    { char* keyword_name = symbol_unbox (item)->name;
+	    {
+	      char *keyword_name = symbol_unbox (item)->name;
 	      if (*keyword_name == ':')
-		{ size_t keyword_size = strlen (keyword_name);
+		{
+		  size_t keyword_size = strlen (keyword_name);
 		  item_str = malloc (keyword_size + 2);
 		  if (keyword_size < 3)
-		    { sprintf (item_str, "-%s", keyword_name + 1); }
+		    {
+		      sprintf (item_str, "-%s", keyword_name + 1);
+		    }
 		  else
-		    { sprintf (item_str, "--%s", keyword_name + 1); }
+		    {
+		      sprintf (item_str, "--%s", keyword_name + 1);
+		    }
 		}
 	    }
 	  argv[i] = item_str;
 	}
-      argv[n] = (char*) 0;
+      argv[n] = (char *) 0;
 
       if (params && consp (params->first))
 	{
 	  l = cons_unbox (params->first);
 	  n = cons_count (l);
-	  envp = malloc (sizeof (char*) * (n + 1));
-	  for (i = 0; l; ++ i, l = l->next)
-	    { envp[i] = string_unbox (l->first); }
-	  envp[n] = (char*)0;
-	  params = params->next; 
+	  envp = malloc (sizeof (char *) * (n + 1));
+	  for (i = 0; l; ++i, l = l->next)
+	    {
+	      envp[i] = string_unbox (l->first);
+	    }
+	  envp[n] = (char *) 0;
+	  params = params->next;
 	}
     }
 
   // later, more arguments will specify stdin, stdout, stderr.
   if (params)
-    { 
-      fprintf (stderr, "Error: too many arguments (%d) to `exec'\n", 
+    {
+      fprintf (stderr, "Error: too many arguments (%d) to `exec'\n",
 	       3 + cons_count (params));
       return NULL;
     }
-  execve (program, argv, envp); 
+  execve (program, argv, envp);
   perror ("execve returned");
-  return NULL; // should not return!
+  return NULL;			// should not return!
 }
 
-struct cons*
-_special_mod (struct cons* params)
+struct cons *
+_special_mod (struct cons *params)
 {
   // param must be Long for now.
-  struct cons* m = params->first;
-  struct cons* k = params->next->first;
-  return long_alloc (long_unbox (m) % long_unbox(k));
+  struct cons *m = params->first;
+  struct cons *k = params->next->first;
+  return long_alloc (long_unbox (m) % long_unbox (k));
 }
 
-struct cons*
-_special_evenp (struct cons* params)
+struct cons *
+_special_evenp (struct cons *params)
 {
   // param must be Long.
-  struct cons* param = params->first;
+  struct cons *param = params->first;
   if (long_unbox (param) & 1)
-    { return NULL; }
+    {
+      return NULL;
+    }
   return param;
 }
 
-struct cons*
-_special_oddp (struct cons* params)
+struct cons *
+_special_oddp (struct cons *params)
 {
   // param must be Long.
-  struct cons* param = params->first;
+  struct cons *param = params->first;
   if (long_unbox (param) & 1)
-    { return param; }
+    {
+      return param;
+    }
   return NULL;
 }
-      
+
 void
 context_init_default ()
 {
@@ -1907,16 +1982,19 @@ context_init_default ()
   symbol_define ("*", cons_alloc (&_special_mult, &Q_FUNCTION_INTERP));
   symbol_define ("/", cons_alloc (&_special_divide, &Q_FUNCTION_INTERP));
 
-  symbol_define ("println", cons_alloc (&_special_println, &Q_FUNCTION_INTERP));
+  symbol_define ("println",
+		 cons_alloc (&_special_println, &Q_FUNCTION_INTERP));
   symbol_define ("str", cons_alloc (&_special_str, &Q_FUNCTION_INTERP));
   symbol_define ("spth", cons_alloc (&_special_spth, &Q_MACRO_INTERP));
   symbol_define ("if", cons_alloc (&_special_if, &Q_MACRO_INTERP));
   symbol_define ("if-not", cons_alloc (&_special_if_not, &Q_MACRO_INTERP));
   symbol_define ("when", cons_alloc (&_special_when, &Q_MACRO_INTERP));
-  symbol_define ("when-not", cons_alloc (&_special_when_not, &Q_MACRO_INTERP));
+  symbol_define ("when-not",
+		 cons_alloc (&_special_when_not, &Q_MACRO_INTERP));
 
   symbol_define ("quote", cons_alloc (&_special_quote, &Q_MACRO_INTERP));
-  symbol_define ("quote-eval", cons_alloc (&_special_quote_eval, &Q_MACRO_INTERP));
+  symbol_define ("quote-eval",
+		 cons_alloc (&_special_quote_eval, &Q_MACRO_INTERP));
   symbol_define ("'", cons_alloc (&_special_quote, &Q_MACRO_INTERP));	// temporary
   symbol_define ("`", cons_alloc (&_special_quote_eval, &Q_MACRO_INTERP));	// temporary
   symbol_define ("do", cons_alloc (&_special_do, &Q_MACRO_INTERP));

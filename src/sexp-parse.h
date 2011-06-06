@@ -3,7 +3,6 @@
 
 #include "cons.h"
 #include "box.h"
-#include "htrie.h"
 
 struct cons *sexp_parse_str (struct bin **p_symbols, char *buf);
 

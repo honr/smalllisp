@@ -1,7 +1,6 @@
 #include "interp.h"
 #include "cons.h"
 #include "box.h"
-#include "htrie.h"
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -109,20 +108,20 @@ interp_eval_cons (struct cons *forms)
   return result;
 }
 
-inline struct cons*
-interp_call_evaledparams (struct cons* f, struct cons* params)
-{ // broken.
+inline struct cons *
+interp_call_evaledparams (struct cons *f, struct cons *params)
+{				// broken.
   // TODO: distinguish between macros and functions.
   //       in particular, indicate when to pass evaluated params
   //       and when to send raw params.
-  struct cons* result;
+  struct cons *result;
   if (!f)
     {
       printf ("Error: tried to eval nil\n");
       return NULL;
     }
 
-  struct cons* specifier = f->next;
+  struct cons *specifier = f->next;
   if (specifier == &Q_FUNCTION_INTERP)
     {
       struct cons *(*f0) (struct cons * params);
@@ -135,41 +134,40 @@ interp_call_evaledparams (struct cons* f, struct cons* params)
       struct fn_interp *l = f->first;
       struct cons *keys;
       for (keys = l->params;
-	   keys && params;
-	   keys = keys->next, params = params->next)
-	{ // key must be a symbol, for now.
+	   keys && params; keys = keys->next, params = params->next)
+	{			// key must be a symbol, for now.
 	  symbol_push (symbol_unbox (keys->first), params->first);
 	}
       if (keys || params)
 	{
-	  fprintf (stderr,
-		   "Error: wrong number of arguments to fn.\n");
+	  fprintf (stderr, "Error: wrong number of arguments to fn.\n");
 	}
 
       result = interp_eval_progn (l->body);
       binding_stack_pop ();
     }
-  else 
-    { 
-      printf ("Error: tried to eval with type %s\n", (char*) specifier->first);
+  else
+    {
+      printf ("Error: tried to eval with type %s\n",
+	      (char *) specifier->first);
     }
   return result;
 }
 
-inline struct cons*
-interp_call (struct cons* f, struct cons* params)
-{ // broken.
+inline struct cons *
+interp_call (struct cons *f, struct cons *params)
+{				// broken.
   // TODO: distinguish between macros and functions.
   //       in particular, indicate when to pass evaluated params
   //       and when to send raw params.
-  struct cons* result;
+  struct cons *result;
   if (!f)
     {
       printf ("Error: tried to eval nil\n");
       return NULL;
     }
 
-  struct cons* specifier = f->next;
+  struct cons *specifier = f->next;
   if (specifier == &Q_MACRO_INTERP)
     {
       struct cons *(*f0) (struct cons * params);
@@ -188,24 +186,23 @@ interp_call (struct cons* f, struct cons* params)
       struct fn_interp *l = f->first;
       struct cons *keys;
       for (keys = l->params;
-	   keys && params;
-	   keys = keys->next, params = params->next)
-	{ // key must be a symbol, for now.
+	   keys && params; keys = keys->next, params = params->next)
+	{			// key must be a symbol, for now.
 	  symbol_push (symbol_unbox (keys->first),
 		       interp_eval_box (params->first));
 	}
       if (keys || params)
 	{
-	  fprintf (stderr,
-		   "Error: wrong number of arguments to fn.\n");
+	  fprintf (stderr, "Error: wrong number of arguments to fn.\n");
 	}
 
       result = interp_eval_progn (l->body);
       binding_stack_pop ();
     }
-  else 
-    { 
-      printf ("Error: tried to eval with type %s\n", (char*) specifier->first);
+  else
+    {
+      printf ("Error: tried to eval with type %s\n",
+	      (char *) specifier->first);
     }
   return result;
 }
@@ -231,8 +228,7 @@ interp_eval_box (struct cons *form)
 	  else
 	    {
 	      // struct cons *c_first = interp_eval_box (c->first);
-	      result = interp_call (interp_eval_box (c->first), 
-					 c->next);
+	      result = interp_call (interp_eval_box (c->first), c->next);
 	    }
 	}
       else if (specifier == &Q_SYMBOL)
@@ -244,7 +240,9 @@ interp_eval_box (struct cons *form)
 	    }
 	  else
 	    {
-	      fprintf (stderr, "Error: symbol `%s' unbound\n", sym->name);
+	      fprintf (stderr,
+		       "Error: Unable to resolve symbol `%s' in this context.\n",
+		       sym->name);
 	      exit (1);
 	      // return NULL;
 	    }

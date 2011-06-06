@@ -11,7 +11,7 @@ struct cons
 struct cons *cons_alloc (void *first, struct cons *next);
 int cons_count (struct cons *c);
 void cons_free (struct cons *c);
-void cons_nconcat (struct cons *dest, struct cons* tail);
+void cons_nconcat (struct cons *dest, struct cons *tail);
 struct cons *cons_pop (struct cons *c);
 void cons_nreverse (struct cons **c);
 struct cons *cons_last (struct cons *c);

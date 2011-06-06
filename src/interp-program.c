@@ -31,8 +31,7 @@ main (int argc, char *argv[])
 	      exit (1);
 	    }
 	}
-      struct cons *result =
-	interp (sexp_parse_str (&ctx->symbols, body));
+      struct cons *result = interp (sexp_parse_str (&ctx->symbols, body));
 
       if (box_type (result) == &Q_z1)
 	{

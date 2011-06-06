@@ -81,7 +81,22 @@ inline int consp (struct cons *c);
 inline struct cons *cons_unbox (struct cons *c);
 
 inline int symbolp (struct cons *c);
+inline struct cons *symbol_alloc (struct bin **p_symbols, char *s);
 inline struct symbol *symbol_unbox (struct cons *c);
+
+/* ******************** h-trie ******************** */
+
+struct bin *htrie_alloc (void *val);
+void *htrie_get (struct bin *b, char *key);
+void *htrie_get_ref (struct bin *b, char *key);
+int htrie_assoc (struct bin **b, char *key, void *val);
+// returns 0 or 1 on success, -1 on error.
+
+void htrie_dissoc (struct bin **b, char *key);
+void htrie_free (struct bin *b);
+struct bin *htrie_subtree (struct bin *b, char *prefix);
+
+/* ************************************************ */
 
 
 #define ASCIIRED(x) "\e[31m"x"\e[0m"

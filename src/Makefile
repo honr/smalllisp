@@ -7,7 +7,6 @@ SRC=.
 TARGETs = dirs
 TARGETs += $(DBIN)/cons-test
 TARGETs += $(DBIN)/box-test 
-TARGETs += $(DBIN)/htrie-test 
 TARGETs += $(DBIN)/sexp-parse-test 
 TARGETs += $(DBIN)/interp-test
 TARGETs += $(DBIN)/interp-program
@@ -23,20 +22,16 @@ $(DOBJ)%.o: $(SRC)/%.c $(SRC)/%.h
 $(DBIN)/box-test: $(DOBJ)/box-test.o $(DOBJ)/box.o $(DOBJ)/cons.o
 	gcc -o $@ $^ $(LINKLIBS)
 
-$(DBIN)/htrie-test: $(DOBJ)/htrie-test.o $(DOBJ)/htrie.o $(DOBJ)/box.o $(DOBJ)/cons.o
+$(DBIN)/sexp-parse-test: $(DOBJ)/sexp-parse-test.o $(DOBJ)/sexp-parse.o $(DOBJ)/box.o $(DOBJ)/cons.o
 	gcc -o $@ $^ $(LINKLIBS)
 
-$(DBIN)/sexp-parse-test: $(DOBJ)/sexp-parse-test.o $(DOBJ)/sexp-parse.o $(DOBJ)/htrie.o $(DOBJ)/box.o $(DOBJ)/cons.o
+$(DBIN)/interp-test: $(DOBJ)/interp-test.o $(DOBJ)/specials.o $(DOBJ)/interp.o $(DOBJ)/sexp-parse.o $(DOBJ)/box.o $(DOBJ)/cons.o
 	gcc -o $@ $^ $(LINKLIBS)
 
-$(DBIN)/interp-test: $(DOBJ)/interp-test.o $(DOBJ)/specials.o $(DOBJ)/interp.o $(DOBJ)/sexp-parse.o $(DOBJ)/htrie.o $(DOBJ)/box.o $(DOBJ)/cons.o
+$(DBIN)/interp-program: $(DOBJ)/interp-program.o $(DOBJ)/specials.o $(DOBJ)/interp.o $(DOBJ)/sexp-parse.o $(DOBJ)/box.o $(DOBJ)/cons.o
 	gcc -o $@ $^ $(LINKLIBS)
 
-$(DBIN)/interp-program: $(DOBJ)/interp-program.o $(DOBJ)/specials.o $(DOBJ)/interp.o $(DOBJ)/sexp-parse.o $(DOBJ)/htrie.o $(DOBJ)/box.o $(DOBJ)/cons.o
-	gcc -o $@ $^ $(LINKLIBS)
-
-
-# $(DBIN)/sexp-test: $(DOBJ)/sexp-test.o $(DOBJ)/sexp.o $(DOBJ)/specials.o $(DOBJ)/interp.o $(DOBJ)/sexp-parse.o $(DOBJ)/htrie.o $(DOBJ)/box.o $(DOBJ)/cons.o
+# $(DBIN)/sexp-test: $(DOBJ)/sexp-test.o $(DOBJ)/sexp.o $(DOBJ)/specials.o $(DOBJ)/interp.o $(DOBJ)/sexp-parse.o $(DOBJ)/box.o $(DOBJ)/cons.o
 # 	gcc -o $@ $^ $(LINKLIBS)
 
 clean:
