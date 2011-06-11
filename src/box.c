@@ -3,37 +3,37 @@
 #include <string.h>
 #include <stdio.h>
 
-// struct cons Q_NUMBER = {.first = "Number",.next = NULL };
-struct cons Q_STRING = {.first = "String",.next = NULL };
-struct cons Q_CONS = {.first = "Cons",.next = NULL };
-struct cons Q_MACRO_INTERP = {.first = "Macro (interpretee)",.next = NULL };
-struct cons Q_FUNCTION_INTERP = {.first = "Function (interpretee)",.next =
+// struct cons Q_NUMBER = {.first.p = "Number",.next = NULL };
+struct cons Q_STRING = {.first.p = "String",.next = NULL };
+struct cons Q_CONS = {.first.p = "Cons",.next = NULL };
+struct cons Q_MACRO_INTERP = {.first.p = "Macro (interpretee)",.next = NULL };
+struct cons Q_FUNCTION_INTERP = {.first.p = "Function (interpretee)",.next =
     NULL };
-struct cons Q_LAMBDA_INTERP = {.first = "Lambda (interpretee)",.next = NULL };
-struct cons Q_SYMBOL = {.first = "Symbol",.next = NULL };
-struct cons Q_KEYWORD = {.first = "Keyword",.next = NULL };
+struct cons Q_LAMBDA_INTERP = {.first.p = "Lambda (interpretee)",.next = NULL };
+struct cons Q_SYMBOL = {.first.p = "Symbol",.next = NULL };
+struct cons Q_KEYWORD = {.first.p = "Keyword",.next = NULL };
 
-// struct cons Q_SYMROOT = {.first = "Symbol (not bound)",.next = NULL };
+// struct cons Q_SYMROOT = {.first.p = "Symbol (not bound)",.next = NULL };
 
-struct cons Q_u1 = {.first = "Unsigned Int8",.next = NULL };
-struct cons Q_u2 = {.first = "Unsigned Int16",.next = NULL };
-struct cons Q_u4 = {.first = "Unsigned Int32",.next = NULL };
-struct cons Q_u8 = {.first = "Unsigned Int64",.next = NULL };
-struct cons Q_z1 = {.first = "Signed Int8",.next = NULL };
-struct cons Q_z2 = {.first = "Signed Int16",.next = NULL };
-struct cons Q_z4 = {.first = "Signed Int32",.next = NULL };
-struct cons Q_z8 = {.first = "Signed Int64",.next = NULL };
-struct cons Q_y4 = {.first = "Float",.next = NULL };
-struct cons Q_y8 = {.first = "Double",.next = NULL };
+struct cons Q_u1 = {.first.p = "Unsigned Int8",.next = NULL };
+struct cons Q_u2 = {.first.p = "Unsigned Int16",.next = NULL };
+struct cons Q_u4 = {.first.p = "Unsigned Int32",.next = NULL };
+struct cons Q_u8 = {.first.p = "Unsigned Int64",.next = NULL };
+struct cons Q_z1 = {.first.p = "Signed Int8",.next = NULL };
+struct cons Q_z2 = {.first.p = "Signed Int16",.next = NULL };
+struct cons Q_z4 = {.first.p = "Signed Int32",.next = NULL };
+struct cons Q_z8 = {.first.p = "Signed Int64",.next = NULL };
+struct cons Q_y4 = {.first.p = "Float",.next = NULL };
+struct cons Q_y8 = {.first.p = "Double",.next = NULL };
 
-struct cons Q_RGB3 = {.first = "RGB Triplet",.next = NULL };
+struct cons Q_RGB3 = {.first.p = "RGB Triplet",.next = NULL };
 
 // () is not nil!  should we fix that?
 
 // should be a symbol.
-struct cons Q_VAL_NONNIL = {.first = "true",.next = &Q_STRING };	// bad
-struct cons Q_VAL_UNQUOTE = {.first = "unquote",.next = &Q_KEYWORD };	// bad
-struct cons Q_VAL_UNQUOTE_LIST = {.first = "unquote",.next = &Q_KEYWORD };	// bad
+struct cons Q_VAL_NONNIL = {.first.p = "true",.next = &Q_STRING };	// bad
+struct cons Q_VAL_UNQUOTE = {.first.p = "unquote",.next = &Q_KEYWORD };	// bad
+struct cons Q_VAL_UNQUOTE_LIST = {.first.p = "unquote",.next = &Q_KEYWORD };	// bad
 
 // similar to keywords, except these do not start with ':'
 
@@ -98,7 +98,7 @@ inline struct cons *
 cons_alloc (void *first, struct cons *next)
 {
   struct cons *c = malloc (sizeof (struct cons));
-  c->first = first;
+  c->first.p = first;
   c->next = next;
   return c;
 }
@@ -172,7 +172,7 @@ cons_last (struct cons *c)
 inline void
 cons_insert_tail (struct cons *cursor, void *item)
 {
-  /* cursor->first points to the HEAD of the list,
+  /* cursor->first.p points to the HEAD of the list,
      cursor->next points to the CURRENT position, or nil if not specified
      - when both are non-nil, inserts there and updates cursor->next (tail).
      - when HEAD is non-nil but CURRENT is nil,
@@ -180,7 +180,7 @@ cons_insert_tail (struct cons *cursor, void *item)
      - when both are nil, sets both HEAD and CURRENT to the new cons. */
 
   struct cons *consed_item = cons_alloc (item, NULL);
-  if (cursor->first)
+  if (cursor->first.p)
     {
       if (cursor->next)
 	{
@@ -188,12 +188,12 @@ cons_insert_tail (struct cons *cursor, void *item)
 	}
       else
 	{
-	  cursor->next = (cons_last (cursor->first)->next = consed_item);
+	  cursor->next = (cons_last (cursor->first.c)->next = consed_item);
 	}
     }
   else
     {
-      cursor->first = (cursor->next = consed_item);
+      cursor->first.p = (cursor->next = consed_item);
     }
 }
 
@@ -201,7 +201,7 @@ inline struct bin *
 bin_alloc (void *first, struct bin *left, struct bin *right)
 {
   struct bin *b = malloc (sizeof (struct bin));
-  b->first = first;
+  b->first.p = first;
   b->left = left;
   b->right = right;
   return b;
@@ -250,35 +250,35 @@ int_alloc (int i)
 inline int
 int_unbox (struct cons *c)
 {
-  return *((int *) c->first);
+  return *((int *) c->first.p);
 }
 
 inline struct cons *
 long_alloc (long i)
 {
-  long *j = malloc (sizeof (long));
-  *j = i;
-  return cons_alloc (j, &Q_z8);
+  union quan j;
+  j.z8 = i;
+  return cons_alloc (j.p, &Q_z8);
 }
 
 inline long
 long_unbox (struct cons *c)
 {
-  return *((long *) c->first);
+  return c->first.z8;
 }
 
 inline struct cons *
 double_alloc (double i)
 {
-  double *j = malloc (sizeof (double));
-  *j = i;
-  return cons_alloc (j, &Q_y8);
+  union quan j;
+  j.y8 = i;
+  return cons_alloc (j.p, &Q_y8);
 }
 
 inline double
 double_unbox (struct cons *c)
 {
-  return *((double *) c->first);
+  return c->first.y8;
 }
 
 inline struct cons *
@@ -292,7 +292,7 @@ rgb_alloc (struct rgb3 i)
 inline struct rgb3
 rgb_unbox (struct cons *c)
 {
-  return *((struct rgb3 *) c->first);
+  return *((struct rgb3 *) c->first.p);
 }
 
 inline struct rgb3
@@ -332,17 +332,17 @@ number_alloc (char *s)
     {
       if (strchr (s, '.'))
 	{
-	  double *j = malloc (sizeof (double));
-	  *j = strtod (s, NULL);
-	  return cons_alloc (j, &Q_y8);
+	  union quan j;
+	  j.y8 = strtod (s, NULL);
+	  return cons_alloc (j.p, &Q_y8);
 	}
       /* else if ((sr = strchr (s, '/')))
          {} */
       else if (s[0] == '0' && s[1] == 'x')
 	{
-	  long *j = malloc (sizeof (long));
-	  *j = strtol (s, NULL, 16);
-	  return cons_alloc (j, &Q_z8);
+	  union quan j;
+	  j.z8 = strtol (s, NULL, 16);
+	  return cons_alloc (j.p, &Q_z8);
 	}
       else if (s[0] == '3' && s[1] == 'x')	// color
 	{
@@ -371,9 +371,9 @@ number_alloc (char *s)
 	}
       else
 	{
-	  long *j = malloc (sizeof (long));
-	  *j = strtol (s, NULL, 10);
-	  return cons_alloc (j, &Q_z8);
+	  union quan j;
+	  j.z8 = strtol (s, NULL, 10);
+	  return cons_alloc (j.p, &Q_z8);
 	}
     }
   else
@@ -411,47 +411,47 @@ number_to_str (char *dest, struct cons *c)
   struct cons *type_specifier = c->next;
   if (type_specifier == &Q_u1)
     {
-      return sprintf (dest, "%d", *((unsigned char *) c->first));
+      return sprintf (dest, "%d", c->first.u1);
     }
   else if (type_specifier == &Q_z1)
     {
-      return sprintf (dest, "%d", *((char *) c->first));
+      return sprintf (dest, "%d", c->first.z1);
     }
   else if (type_specifier == &Q_u2)
     {
-      return sprintf (dest, "%d", *((unsigned short *) c->first));
+      return sprintf (dest, "%d", c->first.u2);
     }
   else if (type_specifier == &Q_u4)
     {
-      return sprintf (dest, "%d", *((unsigned int *) c->first));
+      return sprintf (dest, "%d", c->first.u4);
     }
   else if (type_specifier == &Q_u8)
     {
-      return sprintf (dest, "%ld", *((unsigned long *) c->first));
+      return sprintf (dest, "%ld", c->first.u8);
     }
   else if (type_specifier == &Q_z1)
     {
-      return sprintf (dest, "%d", *((char *) c->first));
+      return sprintf (dest, "%d", c->first.z1);
     }
   else if (type_specifier == &Q_z2)
     {
-      return sprintf (dest, "%d", *((short *) c->first));
+      return sprintf (dest, "%d", c->first.z2);
     }
   else if (type_specifier == &Q_z4)
     {
-      return sprintf (dest, "%d", *((int *) c->first));
+      return sprintf (dest, "%d", c->first.z4);
     }
   else if (type_specifier == &Q_z8)
     {
-      return sprintf (dest, "%ld", *((long *) c->first));
+      return sprintf (dest, "%ld", c->first.z8);
     }
   else if (type_specifier == &Q_y4)
     {
-      return sprintf (dest, "%f", *((float *) c->first));
+      return sprintf (dest, "%f", c->first.y4);
     }
   else if (type_specifier == &Q_y8)
     {
-      return sprintf (dest, "%f", *((double *) c->first));
+      return sprintf (dest, "%f", c->first.y8);
     }
   else
     {
@@ -477,7 +477,7 @@ string_alloc_c (char *s)
 inline char *
 string_unbox (struct cons *c)
 {
-  return (char *) c->first;
+  return (char *) c->first.p;
 }
 
 inline int
@@ -489,7 +489,7 @@ consp (struct cons *c)
 inline struct cons *
 cons_unbox (struct cons *c)
 {
-  return (struct cons *) c->first;
+  return (struct cons *) c->first.p;
 }
 
 
@@ -525,7 +525,7 @@ symbol_alloc (struct bin **p_symbols, char *s)
 inline struct symbol *
 symbol_unbox (struct cons *c)
 {
-  return (struct symbol *) c->first;
+  return (struct symbol *) c->first.p;
 }
 
 inline struct bin *
@@ -577,7 +577,7 @@ htrie_get (struct bin *b, char *key)
   while (b)
     {
       char *cur;
-      for (cur = (char *) b->first; *key && (*key == *cur); ++cur, ++key);
+      for (cur = (char *) b->first.p; *key && (*key == *cur); ++cur, ++key);
 
       if (*cur)
 	{
@@ -602,7 +602,7 @@ htrie_get_ref (struct bin *b, char *key)
   while (b)
     {
       char *cur;
-      for (cur = (char *) b->first; *key && (*key == *cur); ++cur, ++key);
+      for (cur = (char *) b->first.p; *key && (*key == *cur); ++cur, ++key);
 
       if (*cur)
 	{
@@ -634,15 +634,15 @@ htrie_assoc (struct bin **bp, char *key, void *val)
       else			// not empty. modify current one.
 	{
 	  char *cur;
-	  for (cur = (*bp)->first; *key && (*cur == *key); ++cur, ++key);
+	  for (cur = (*bp)->first.p; *key && (*cur == *key); ++cur, ++key);
 
 	  if (*cur)		// split at cur
 	    {
 	      char *x;
 	      char *y;
-	      str_split ((char *) (*bp)->first, cur, &x, &y);
-	      free ((*bp)->first);
-	      (*bp)->first = y;
+	      str_split ((char *) (*bp)->first.p, cur, &x, &y);
+	      free ((*bp)->first.p);
+	      (*bp)->first.p = y;
 	      void **ctree = NULL;
 	      chartree_assoc (&ctree, *y, *bp);
 	      *bp = bin_alloc (x, NULL, (struct bin *) ctree);
@@ -715,7 +715,7 @@ cons_introspect (struct cons *c, int level, int expect_boxed)
 	  if (specifier == &Q_CONS)
 	    {
 	      printf (ASCIIYELLOW ("^Cons") "\n");
-	      cons_introspect (c->first, level + 1, 0);
+	      cons_introspect (c->first.p, level + 1, 0);
 	    }
 	  else if (specifier == &Q_STRING)
 	    {
@@ -723,12 +723,12 @@ cons_introspect (struct cons *c, int level, int expect_boxed)
 	    }
 	  else if (specifier == &Q_SYMBOL)
 	    {
-	      struct symbol *sym = c->first;
+	      struct symbol *sym = c->first.p;
 	      printf (ASCIIYELLOW ("^Symbol") " '%s\n", sym->name);
 	    }
 	  else if (specifier == &Q_KEYWORD)
 	    {
-	      struct symbol *sym = c->first;
+	      struct symbol *sym = c->first.p;
 	      printf (ASCIIYELLOW ("^Keyword") " %s\n", sym->name);
 	    }
 	  else if (numberp (c))
@@ -738,14 +738,14 @@ cons_introspect (struct cons *c, int level, int expect_boxed)
 	    }
 	  else if (specifier == &Q_RGB3)
 	    {
-	      unsigned char *x = (unsigned char *) c->first;
+	      unsigned char *x = (unsigned char *) c->first.p;
 	      printf (ASCIIYELLOW ("^RGB") " \"#%.2X%.2X%.2X\"\n", x[0], x[1],
 		      x[2]);
 	    }
 	  else
-	    {			// printf ("[Unknown Type] %p\n", c->first);
-	      printf (ASCIIRED ("guesswork!") " %p\n", c->first);
-	      cons_introspect (c->first, level + 1, 1);
+	    {			// printf ("[Unknown Type] %p\n", c->first.p);
+	      printf (ASCIIRED ("guesswork!") " %p\n", c->first.p);
+	      cons_introspect (c->first.p, level + 1, 1);
 
 	    }
 	}
@@ -759,7 +759,7 @@ cons_introspect (struct cons *c, int level, int expect_boxed)
       printf ("  " ASCIIYELLOW ("(") "\n");
       for (; c; c = c->next)
 	{
-	  cons_introspect (c->first, level, 1);
+	  cons_introspect (c->first.p, level, 1);
 	}
       for (i = level - 1; i; --i)
 	{
@@ -783,9 +783,9 @@ box_print (struct cons *c)
       if (specifier == &Q_CONS)
 	{
 	  printf ("(");
-	  for (c = c->first; c; c = c->next)
+	  for (c = c->first.p; c; c = c->next)
 	    {
-	      box_print (c->first);
+	      box_print (c->first.p);
 	      if (c->next)
 		{
 		  printf (" ");
@@ -800,12 +800,12 @@ box_print (struct cons *c)
 	}
       else if (specifier == &Q_SYMBOL)
 	{
-	  struct symbol *sym = c->first;
+	  struct symbol *sym = c->first.p;
 	  printf ("'%s", sym->name);
 	}
       else if (specifier == &Q_KEYWORD)
 	{
-	  struct symbol *sym = c->first;
+	  struct symbol *sym = c->first.p;
 	  printf ("%s", sym->name);
 	}
       else if (numberp (c))
@@ -815,12 +815,12 @@ box_print (struct cons *c)
 	}
       else if (specifier == &Q_RGB3)
 	{
-	  unsigned char *x = (unsigned char *) c->first;
+	  unsigned char *x = (unsigned char *) c->first.p;
 	  printf ("\"#%.2X%.2X%.2X\"", x[0], x[1], x[2]);
 	}
       else
 	{
-	  fprintf (stderr, "[Unknown Type] %p\n", c->first);
+	  fprintf (stderr, "[Unknown Type] %p\n", c->first.p);
 	}
     }
 }
@@ -843,8 +843,8 @@ box_to_str (struct cons *c)
       if (specifier == &Q_CONS)
 	{
 	  *box__string_buff_ = 0;
-	  for (c = (struct cons*) c->first; c; c = c->next)
-	    { strcat (box__string_buff_, box_to_str (c->first));
+	  for (c = (struct cons*) c->first.p; c; c = c->next)
+	    { strcat (box__string_buff_, box_to_str (c->first.p));
 	      if (c->next)
 		{ strcat (box__string_buff_, " "); }
 	    }
@@ -855,11 +855,11 @@ box_to_str (struct cons *c)
 	}
       else if (specifier == &Q_SYMBOL)
 	{
-	  struct cons **sym = (struct cons **) c->first;
+	  struct cons **sym = (struct cons **) c->first.p;
 	  // cons_introspect (*sym, level + 1, 0);
 	  if ((*sym)->next == &Q_SYMROOT)
 	    {
-	      sprintf (box__string_buff_, "'%s", (char *) (*sym)->first);
+	      sprintf (box__string_buff_, "'%s", (char *) (*sym)->first.p);
 	      s = strdup (box__string_buff_);
 	    }
 	  else
@@ -874,13 +874,13 @@ box_to_str (struct cons *c)
 	}
       else if (specifier == &Q_RGB3)
 	{
-	  unsigned char *x = (unsigned char *) c->first;
+	  unsigned char *x = (unsigned char *) c->first.p;
 	  sprintf (box__string_buff_, "\"#%.2X%.2X%.2X\"\n", x[0], x[1], x[2]);
 	  s = strdup (box__string_buff_);
 	}
       else
 	{			
-	  fprintf (stderr, "[Unknown Type] %p\n", c->first);
+	  fprintf (stderr, "[Unknown Type] %p\n", c->first.p);
 	}
     }
   return s;

@@ -38,24 +38,24 @@ _sexp_parse__open (struct cons **stackp, struct bin **p_symbols,
   *stackp = cons_alloc (cons_alloc (NULL, NULL), *stackp);
   if (specifier == '[')
     {
-      cons_insert_tail ((*stackp)->first, string_alloc ("vector"));
+      cons_insert_tail ((*stackp)->first.c, string_alloc ("vector"));
     }
   else if (specifier == '{')
     {
-      cons_insert_tail ((*stackp)->first, string_alloc ("hash-map"));
+      cons_insert_tail ((*stackp)->first.c, string_alloc ("hash-map"));
     }
   else if (specifier == '\'')
     {
-      cons_insert_tail ((*stackp)->first, symbol_alloc (p_symbols, "quote"));
+      cons_insert_tail ((*stackp)->first.c, symbol_alloc (p_symbols, "quote"));
     }
   else if (specifier == '`')
     {
-      cons_insert_tail ((*stackp)->first,
+      cons_insert_tail ((*stackp)->first.c,
 			symbol_alloc (p_symbols, "quote-eval"));
     }
   else if (specifier == '~')
     {
-      cons_insert_tail ((*stackp)->first,
+      cons_insert_tail ((*stackp)->first.c,
 			symbol_alloc (p_symbols, "unquote"));
     }
 }
@@ -64,11 +64,10 @@ inline void
 _sexp_parse__close (struct cons **stackp, struct bin **p_symbols)
 {
   struct cons *stack = *stackp;
-  struct cons *c = cons_alloc (((struct cons *) stack->first)->first,
-			       &Q_CONS);
-  free (stack->first);
+  struct cons *c = cons_alloc (stack->first.c->first.p, &Q_CONS);
+  free (stack->first.p);
   *stackp = cons_pop (stack);
-  cons_insert_tail ((*stackp)->first, c);
+  cons_insert_tail ((*stackp)->first.c, c);
 }
 
 inline void
@@ -77,15 +76,15 @@ _sexp_parse__token (struct cons **stackp, struct bin **p_symbols,
 {
   if (specifier == TOKEN_SYMBOL)
     {
-      cons_insert_tail ((*stackp)->first, symbol_alloc (p_symbols, token));
+      cons_insert_tail ((*stackp)->first.c, symbol_alloc (p_symbols, token));
     }
   else if (specifier == TOKEN_STRING)
     {
-      cons_insert_tail ((*stackp)->first, string_alloc (token));
+      cons_insert_tail ((*stackp)->first.c, string_alloc (token));
     }
   else if (specifier == TOKEN_NUMBER)
     {
-      cons_insert_tail ((*stackp)->first, number_alloc (token));
+      cons_insert_tail ((*stackp)->first.c, number_alloc (token));
       free (token);
     }
   else
@@ -354,8 +353,8 @@ sexp_parse_str (struct bin **p_symbols, char *buf)
     }
 
   free (bufout);
-  struct cons *root = ((struct cons *) stack->first)->first;
-  free (stack->first);
+  struct cons *root = stack->first.c->first.p;
+  free (stack->first.p);
   free (stack);
   return root;
 }

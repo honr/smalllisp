@@ -13,7 +13,7 @@ main ()
 
     c = int_alloc (0x10);
     c = cons_alloc (c, NULL);	// make a list out of it
-    printf ("%d\n", *(int *) ((struct cons *) c->first)->first);
+    printf ("%d\n", *((int *) c->first.c->first.p));
     printf ("--------------------\n");
 
     printf ("cons-insert-tail:\n");
@@ -22,12 +22,12 @@ main ()
     cons_insert_tail (curs, int_alloc (20));
     cons_insert_tail (curs, int_alloc (30));
     cons_insert_tail (curs, int_alloc (40));
-    c = (struct cons *) curs->first;
-    printf ("%d\n", *(int *) ((struct cons *) c->first)->first);
-    printf ("%d\n", *(int *) ((struct cons *) c->next->first)->first);
-    printf ("%d\n", *(int *) ((struct cons *) c->next->next->first)->first);
+    c = (struct cons *) curs->first.p;
+    printf ("%d\n", *(int *) ((struct cons *) c->first.p)->first.p);
+    printf ("%d\n", *(int *) ((struct cons *) c->next->first.p)->first.p);
+    printf ("%d\n", *(int *) ((struct cons *) c->next->next->first.p)->first.p);
     printf ("%d\n",
-	    *(int *) ((struct cons *) c->next->next->next->first)->first);
+	    *(int *) ((struct cons *) c->next->next->next->first.p)->first.p);
     printf ("--------------------\n");
   }
 
@@ -36,8 +36,8 @@ main ()
     cons_alloc (int_alloc (798),
 		cons_alloc (string_alloc ("foo"),
 			    NULL));
-  printf ("798 == %d\n", int_unbox (c->first));
-  printf ("foo == %s\n", string_unbox (c->next->first));
+  printf ("798 == %d\n", int_unbox (c->first.p));
+  printf ("foo == %s\n", string_unbox (c->next->first.p));
   printf ("--------------------\n");
 
   printf ("cons-insert-tail:\n");
@@ -46,12 +46,12 @@ main ()
   cons_insert_tail (curs, int_alloc (20));
   cons_insert_tail (curs, int_alloc (30));
   cons_insert_tail (curs, int_alloc (40));
-  c = (struct cons *) curs->first;
+  c = (struct cons *) curs->first.p;
   free (curs);
-  printf ("10 == %d\n", int_unbox (c->first));
-  printf ("20 == %d\n", int_unbox (c->next->first));
-  printf ("30 == %d\n", int_unbox (c->next->next->first));
-  printf ("40 == %d\n", int_unbox (c->next->next->next->first));
+  printf ("10 == %d\n", int_unbox (c->first.p));
+  printf ("20 == %d\n", int_unbox (c->next->first.p));
+  printf ("30 == %d\n", int_unbox (c->next->next->first.p));
+  printf ("40 == %d\n", int_unbox (c->next->next->next->first.p));
   printf ("--------------------\n");
 
   printf ("htrie-alloc:\n");

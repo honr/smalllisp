@@ -5,9 +5,27 @@
 #include <stdlib.h>
 
 /* unary cell */
+union quan {
+  struct cons* c;
+  void* p;
+  unsigned char u1;
+  unsigned short u2;
+  unsigned int u4;
+  unsigned long u8;
+  char z1;
+  short z2;
+  int z4;
+  long z8;
+  float y4;
+  double y8;
+  char* s;
+  struct symbol* sym;
+};
+
 struct cons
 {
-  void *first;
+  union quan first;
+  // void *first;
   struct cons *next;
 };
 
@@ -27,14 +45,16 @@ void dbg_cons_print (struct cons *c);
 /* binary cell */
 struct bin
 {
-  void *first;
+  union quan first;
+  // void *first;
   struct bin *left;
   struct bin *right;
 };
 
 struct bin_a
 {
-  void *first;
+  union quan first;
+  // void *first;
   struct bin next[2];
 };
 

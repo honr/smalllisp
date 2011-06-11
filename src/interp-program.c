@@ -35,7 +35,7 @@ main (int argc, char *argv[])
 
       if (box_type (result) == &Q_z1)
 	{
-	  return *((char *) result->first);
+	  return *((char *) result->first.p);
 	}
       else
 	{

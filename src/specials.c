@@ -17,7 +17,7 @@ _special_list (struct cons *params)
 struct cons *
 _special_inc (struct cons *params)
 {				/* Only supports long and double for now. */
-  struct cons *item = params->first;
+  struct cons *item = params->first.c;
   if (item->next == &Q_z8)
     {
       return long_alloc (long_unbox (item) + 1);
@@ -36,7 +36,7 @@ _special_inc (struct cons *params)
 struct cons *
 _special_dec (struct cons *params)
 {				/* Only supports long and double for now. */
-  struct cons *item = params->first;
+  struct cons *item = params->first.c;
   if (item->next == &Q_z8)
     {
       return long_alloc (long_unbox (item) - 1);
@@ -65,8 +65,8 @@ _special_plus (struct cons *params)
 
   for (; params; params = params->next)
     {
-      item = params->first;
-      // item = interp_eval_box (params->first);
+      item = params->first.c;
+      // item = interp_eval_box (params->first.c);
       specifier = item->next;
       if (mode == &Q_y8)
 	{
@@ -140,7 +140,7 @@ struct cons *
 _special_minus (struct cons *params)
 {
   // only supporting long, double and rgb3 for now.
-  struct cons *item = params->first;
+  struct cons *item = params->first.c;
   long result_long = 0;
   double result_double = 0.0;
   struct rgb3 result_rgb = { 0, 0, 0 };
@@ -176,7 +176,7 @@ _special_minus (struct cons *params)
 
   for (; params; params = params->next)
     {
-      item = params->first;
+      item = params->first.c;
       if (mode == &Q_y8)
 	{
 	  if (item->next == &Q_y8)
@@ -252,7 +252,7 @@ _special_mult (struct cons *params)
 
   for (; params; params = params->next)
     {
-      item = params->first;
+      item = params->first.c;
       if (mode == &Q_y8)
 	{
 	  if (item->next == &Q_y8)
@@ -337,7 +337,7 @@ struct cons *
 _special_divide (struct cons *params)
 {
   // only supporting long, double and rgb3 for now.
-  struct cons *item = params->first;
+  struct cons *item = params->first.c;
   long result_long = 1;
   double result_double = 1.0;
   struct rgb3 result_rgb = { 0, 0, 0 };
@@ -373,7 +373,7 @@ _special_divide (struct cons *params)
 
   for (; params; params = params->next)
     {
-      item = params->first;
+      item = params->first.c;
       if (mode == &Q_y8)
 	{
 	  if (item->next == &Q_y8)
@@ -445,7 +445,7 @@ _special_println (struct cons *params)
 {
   for (; params; params = params->next)
     {
-      box_print (params->first);
+      box_print (params->first.c);
       if (params->next)
 	{
 	  printf (" ");
@@ -470,10 +470,10 @@ __special_str__box_to_str (char **p_buff_cur, char *buff_limit,
 	{
 	  strcat_rf (p_buff_cur, buff_limit, "(");
 	  struct cons *c_sub;
-	  for (c_sub = (struct cons *) c->first; c_sub; c_sub = c_sub->next)
+	  for (c_sub = c->first.c; c_sub; c_sub = c_sub->next)
 	    {
 	      __special_str__box_to_str (p_buff_cur, buff_limit,
-					 c_sub->first);
+					 c_sub->first.c);
 	      if (c_sub->next)
 		{
 		  strcat_rf (p_buff_cur, buff_limit, " ");
@@ -487,14 +487,14 @@ __special_str__box_to_str (char **p_buff_cur, char *buff_limit,
 	}
       else if (specifier == &Q_SYMBOL)
 	{
-	  struct symbol *sym = (struct symbol *) c->first;
+	  struct symbol *sym = c->first.sym;
 	  // cons_introspect (*sym, level + 1, 0);
 	  strcat_rf (p_buff_cur, buff_limit, "'");
 	  strcat_rf (p_buff_cur, buff_limit, sym->name);
 	}
       else if (specifier == &Q_KEYWORD)
 	{
-	  struct symbol *sym = c->first;
+	  struct symbol *sym = c->first.sym;
 	  strcat_rf (p_buff_cur, buff_limit, sym->name);
 	}
       else if (numberp (c))
@@ -511,7 +511,7 @@ __special_str__box_to_str (char **p_buff_cur, char *buff_limit,
 	}
       else if (specifier == &Q_RGB3)
 	{
-	  struct rgb3 *x = (struct rgb3 *) c->first;
+	  struct rgb3 *x = (struct rgb3 *) c->first.p;
 	  int n;
 	  if ((n = snprintf (*p_buff_cur, buff_limit - (*p_buff_cur),
 			     "\"#%.2X%.2X%.2X\"", x->r, x->g, x->b)) >= 0)
@@ -525,7 +525,7 @@ __special_str__box_to_str (char **p_buff_cur, char *buff_limit,
 	}
       else
 	{
-	  fprintf (stderr, "[Unknown Type] %p\n", c->first);
+	  fprintf (stderr, "[Unknown Type] %p\n", c->first.p);
 	}
     }
   return *p_buff_cur;
@@ -542,7 +542,7 @@ _special_str (struct cons *params)
 
   for (; params; params = params->next)
     {
-      __special_str__box_to_str (&buff_cur, buff_limit, params->first);
+      __special_str__box_to_str (&buff_cur, buff_limit, params->first.c);
     }
 
   if (buff_cur)
@@ -572,7 +572,7 @@ _special_spth (struct cons *params)
   for (; params; params = params->next)
     {
       __special_str__box_to_str (&buff_cur, buff_limit,
-				 interp_eval_box (params->first));
+				 interp_eval_box (params->first.c));
       if (params->next)
 	{
 	  strcat_rf (&buff_cur, buff_limit, "/");
@@ -597,9 +597,9 @@ _special_spth (struct cons *params)
 struct cons *
 _special_if (struct cons *params)
 {
-  if (interp_eval_box (params->first))
+  if (interp_eval_box (params->first.c))
     {
-      return interp_eval_box (params->next->first);
+      return interp_eval_box (params->next->first.c);
     }
   else
     {
@@ -610,20 +610,20 @@ _special_if (struct cons *params)
 struct cons *
 _special_if_not (struct cons *params)
 {
-  if (interp_eval_box (params->first))
+  if (interp_eval_box (params->first.c))
     {
       return interp_eval_progn (params->next->next);
     }
   else
     {
-      return interp_eval_box (params->next->first);
+      return interp_eval_box (params->next->first.c);
     }
 }
 
 struct cons *
 _special_when (struct cons *params)
 {
-  if (interp_eval_box (params->first))
+  if (interp_eval_box (params->first.c))
     {
       return interp_eval_progn (params->next);
     }
@@ -636,7 +636,7 @@ _special_when (struct cons *params)
 struct cons *
 _special_when_not (struct cons *params)
 {
-  if (interp_eval_box (params->first))
+  if (interp_eval_box (params->first.c))
     {
       return NULL;
     }
@@ -650,25 +650,25 @@ struct cons *
 _special_quote (struct cons *params)
 {
   // TODO: test.
-  return params->first;		// (params, &Q_CONS);
+  return params->first.c;		// (params, &Q_CONS);
 }
 
 struct cons *
 _special_quote_eval (struct cons *params)
 {				// recursively assume quoted unless `unquote' appears, in which case
   // eval normally.
-  if (!params->first)
+  if (!params->first.p)
     {
       return NULL;
     }
 
-  if (!consp (params->first))
+  if (!consp (params->first.c))
     {
-      return params->first;
+      return params->first.c;
     }
 
-  // params->first is a cons
-  struct cons *in_cur = cons_unbox (params->first);
+  // params->first.c is a cons
+  struct cons *in_cur = cons_unbox (params->first.c);
   struct cons *in_stack = cons_alloc (in_cur, NULL);
   struct cons *out_stack = cons_alloc (cons_alloc (NULL, NULL), NULL);
 
@@ -676,43 +676,41 @@ _special_quote_eval (struct cons *params)
     {
       if (in_cur)
 	{
-	  struct cons *in_cur_first = in_cur->first;
+	  struct cons *in_cur_first = in_cur->first.c;
 
 	  if (consp (in_cur_first))
 	    {
-	      if (!in_cur_first->first)	// empty list
+	      if (!in_cur_first->first.c)	// empty list
 		{
-		  // cons_insert_tail (out_stack->first, in_cur_first);
-		  cons_insert_tail (out_stack->first, NULL);
+		  // cons_insert_tail (out_stack->first.c, in_cur_first);
+		  cons_insert_tail (out_stack->first.c, NULL);
 		  in_cur = in_cur->next;
 		}
 	      else
 		{
 		  struct cons *subcons = cons_unbox (in_cur_first);
-		  struct cons *subcons_first = subcons->first;
+		  struct cons *subcons_first = subcons->first.c;
 
 		  // check if the first element is 'unquote or 'unquote-list
 		  if (symbolp (subcons_first) &&
 		      (symbol_unbox (subcons_first)->vals) &&
-		      (symbol_unbox (subcons_first)->vals->first ==
+		      (symbol_unbox (subcons_first)->vals->first.p ==
 		       &Q_VAL_UNQUOTE))
 		    {
-		      cons_insert_tail (out_stack->first,
-					interp_eval_box (subcons->
-							 next->first));
+		      cons_insert_tail (out_stack->first.c,
+					interp_eval_box (subcons->next->first.c));
 		      in_cur = in_cur->next;
 		    }
 		  else if (symbolp (subcons_first) &&
 			   (symbol_unbox (subcons_first)->vals) &&
-			   (symbol_unbox (subcons_first)->vals->first ==
+			   (symbol_unbox (subcons_first)->vals->first.c ==
 			    &Q_VAL_UNQUOTE_LIST))
 		    {
-		      struct cons *q =
-			((struct cons *)
-			 interp_eval_box (subcons->next->first))->first;
+		      struct cons *q = 
+			interp_eval_box (subcons->next->first.c)->first.p;
 		      for (; q; q = q->next)
 			{
-			  cons_insert_tail (out_stack->first, q->first);
+			  cons_insert_tail (out_stack->first.c, q->first.p);
 			}
 		      in_cur = in_cur->next;
 		    }
@@ -727,28 +725,28 @@ _special_quote_eval (struct cons *params)
 	    }
 	  else
 	    {
-	      cons_insert_tail (out_stack->first, in_cur_first);
+	      cons_insert_tail (out_stack->first.c, in_cur_first);
 	      in_cur = in_cur->next;
 	    }
 	}
       else			// go back up
 	{
-	  in_cur = in_stack->first;
+	  in_cur = in_stack->first.c;
 	  in_stack = cons_pop (in_stack);
 	  if (in_stack)
 	    {
 	      struct cons *res =
-		cons_alloc (((struct cons *) out_stack->first)->first,
+		cons_alloc (out_stack->first.c->first.p,
 			    &Q_CONS);
-	      free (out_stack->first);
+	      free (out_stack->first.p);
 	      out_stack = cons_pop (out_stack);
-	      cons_insert_tail (out_stack->first, res);
+	      cons_insert_tail (out_stack->first.c, res);
 	    }
 	}
     }
-  struct cons *result = ((struct cons *) out_stack->first)->first;
+  struct cons *result = out_stack->first.c->first.c;
   // cons_introspect (result, 0, 0);
-  free (out_stack->first);
+  free (out_stack->first.p);
   free (out_stack);
   return cons_alloc (result, &Q_CONS);
 }
@@ -756,10 +754,10 @@ _special_quote_eval (struct cons *params)
 struct cons *
 _special_first (struct cons *params)
 {
-  struct cons *param = params->first;
+  struct cons *param = params->first.c;
   if (consp (param))
     {
-      return (cons_unbox (param))->first;
+      return (cons_unbox (param))->first.c;
     }
   return NULL;
 }
@@ -767,7 +765,7 @@ _special_first (struct cons *params)
 struct cons *
 _special_rest (struct cons *params)
 {
-  struct cons *param = params->first;
+  struct cons *param = params->first.c;
   if (consp (param))
     {
       return cons_alloc ((cons_unbox (param))->next, &Q_CONS);
@@ -778,15 +776,15 @@ _special_rest (struct cons *params)
 struct cons *
 _special_nth (struct cons *params)
 {
-  struct cons *param = params->first;
+  struct cons *param = params->first.c;
   if (consp (param))
     {
-      long n = long_unbox (params->next->first);
+      long n = long_unbox (params->next->first.c);
       struct cons *p;
       for (p = cons_unbox (param); p && n; p = p->next, --n);
       if (p)
 	{
-	  return p->first;
+	  return p->first.c;
 	}
     }
   return NULL;
@@ -795,14 +793,14 @@ _special_nth (struct cons *params)
 struct cons *
 _special_cons (struct cons *params)
 {
-  // cons_alloc ((cons_alloc (params_parsed->first, params_parsed->next) , &Q_CONS);  // or something like that.
-  struct cons *head = params->first;
-  struct cons *body = params->next->first;
+  // cons_alloc ((cons_alloc (params_parsed->first.p, params_parsed->next) , &Q_CONS);  // or something like that.
+  struct cons *head = params->first.c;
+  struct cons *body = params->next->first.c;
   if (body)
     {
       if (body->next == &Q_CONS)
 	{
-	  return cons_alloc (cons_alloc (head, body->first), &Q_CONS);
+	  return cons_alloc (cons_alloc (head, body->first.c), &Q_CONS);
 	}
       else
 	{
@@ -818,7 +816,7 @@ _special_cons (struct cons *params)
 struct cons *
 _special_range (struct cons *params)
 {
-  struct cons *range_to = params->first;
+  struct cons *range_to = params->first.c;
   struct cons *range_from = NULL;
   struct cons *range_step = NULL;
 
@@ -826,12 +824,12 @@ _special_range (struct cons *params)
     {
       params = params->next;
       range_from = range_to;
-      range_to = params->first;
+      range_to = params->first.c;
     }
   if (params->next)
     {
       params = params->next;
-      range_step = params->first;
+      range_step = params->first.c;
     }
   if (params->next)
     {
@@ -1013,7 +1011,7 @@ _special_range (struct cons *params)
 	}
     }
 
-  struct cons *result = cons_alloc (curs->first, &Q_CONS);
+  struct cons *result = cons_alloc (curs->first.p, &Q_CONS);
   free (curs);
   return result;
 }
@@ -1021,28 +1019,28 @@ _special_range (struct cons *params)
 struct cons *
 _special_def (struct cons *params)
 {
-  struct cons *key = params->first;	// must be a symbol, for now.
-  struct symbol *sym = key->first;	// must be a symbol, for now.
-  return symbol_push (sym, interp_eval_box (params->next->first));
+  struct cons *key = params->first.c;	// must be a symbol, for now.
+  struct symbol *sym = key->first.sym;	// must be a symbol, for now.
+  return symbol_push (sym, interp_eval_box (params->next->first.c));
 }
 
 struct cons *
 _special_fn (struct cons *params)
 {
-  return fn_alloc (((struct cons *) params->first)->first, params->next);
+  return fn_alloc (params->first.c->first.p, params->next);
 }
 
 struct cons *
 _special_equals (struct cons *params)
 {
-  struct cons *result = interp_eval_box (params->first);
+  struct cons *result = interp_eval_box (params->first.c);
   struct cons *x;
 
   if (!result)
     {
       for (params = params->next; params; params = params->next)
 	{
-	  if (interp_eval_box (params->first))
+	  if (interp_eval_box (params->first.c))
 	    {
 	      return NULL;
 	    }
@@ -1052,7 +1050,7 @@ _special_equals (struct cons *params)
 
   for (params = params->next; params; params = params->next)
     {
-      if (!(x = interp_eval_box (params->first)))
+      if (!(x = interp_eval_box (params->first.c)))
 	{
 	  return NULL;
 	}
@@ -1082,12 +1080,12 @@ _special_equals (struct cons *params)
 	}
       else if (x->next == &Q_STRING)
 	{
-	  if (strcmp (x->first, result->first) != 0)
+	  if (strcmp (x->first.s, result->first.s) != 0)
 	    {
 	      return NULL;
 	    }
 	}
-      else if (x->first != result->first)	// FIXME: very crude!
+      else if (x->first.p != result->first.p)	// FIXME: very crude!
 	{
 	  return NULL;
 	}
@@ -1098,7 +1096,7 @@ _special_equals (struct cons *params)
 struct cons *
 _special_gt (struct cons *params)
 {
-  struct cons *result = params->first;
+  struct cons *result = params->first.c;
   struct cons *x;
 
   if (!result)
@@ -1108,7 +1106,7 @@ _special_gt (struct cons *params)
 
   for (params = params->next; params; params = params->next)
     {
-      if (!(x = params->first))
+      if (!(x = params->first.c))
 	{
 	  return NULL;
 	}
@@ -1142,7 +1140,7 @@ _special_gt (struct cons *params)
 	}
       else if ((result->next == &Q_STRING) && (x->next == &Q_STRING))
 	{
-	  if (strcmp (result->first, x->first) <= 0)
+	  if (strcmp (result->first.s, x->first.s) <= 0)
 	    {
 	      return NULL;
 	    }
@@ -1159,7 +1157,7 @@ _special_gt (struct cons *params)
 struct cons *
 _special_lt (struct cons *params)
 {
-  struct cons *result = params->first;
+  struct cons *result = params->first.c;
   struct cons *x;
 
   if (!result)
@@ -1169,7 +1167,7 @@ _special_lt (struct cons *params)
 
   for (params = params->next; params; params = params->next)
     {
-      if (!(x = params->first))
+      if (!(x = params->first.c))
 	{
 	  return NULL;
 	}
@@ -1203,7 +1201,7 @@ _special_lt (struct cons *params)
 	}
       else if ((result->next == &Q_STRING) && (x->next == &Q_STRING))
 	{
-	  if (strcmp (result->first, x->first) >= 0)
+	  if (strcmp (result->first.s, x->first.s) >= 0)
 	    {
 	      return NULL;
 	    }
@@ -1220,7 +1218,7 @@ _special_lt (struct cons *params)
 struct cons *
 _special_geq (struct cons *params)
 {
-  struct cons *result = params->first;
+  struct cons *result = params->first.c;
   struct cons *x;
 
   if (!result)
@@ -1230,7 +1228,7 @@ _special_geq (struct cons *params)
 
   for (params = params->next; params; params = params->next)
     {
-      if (!(x = params->first))
+      if (!(x = params->first.c))
 	{
 	  return NULL;
 	}
@@ -1264,7 +1262,7 @@ _special_geq (struct cons *params)
 	}
       else if ((result->next == &Q_STRING) && (x->next == &Q_STRING))
 	{
-	  if (strcmp (result->first, x->first) < 0)
+	  if (strcmp (result->first.s, x->first.s) < 0)
 	    {
 	      return NULL;
 	    }
@@ -1281,7 +1279,7 @@ _special_geq (struct cons *params)
 struct cons *
 _special_leq (struct cons *params)
 {
-  struct cons *result = params->first;
+  struct cons *result = params->first.c;
   struct cons *x;
 
   if (!result)
@@ -1291,7 +1289,7 @@ _special_leq (struct cons *params)
 
   for (params = params->next; params; params = params->next)
     {
-      if (!(x = params->first))
+      if (!(x = params->first.c))
 	{
 	  return NULL;
 	}
@@ -1325,7 +1323,7 @@ _special_leq (struct cons *params)
 	}
       else if ((result->next == &Q_STRING) && (x->next == &Q_STRING))
 	{
-	  if (strcmp (result->first, x->first) > 0)
+	  if (strcmp (result->first.s, x->first.s) > 0)
 	    {
 	      return NULL;
 	    }
@@ -1342,7 +1340,7 @@ _special_leq (struct cons *params)
 struct cons *
 _special_not (struct cons *params)
 {
-  if (params->first)
+  if (params->first.p)
     {
       return NULL;
     }
@@ -1356,13 +1354,13 @@ struct cons *
 _special_let (struct cons *params)
 {
   binding_stack_push ();
-  struct cons *kv = ((struct cons *) params->first)->first;
+  struct cons *kv = params->first.c->first.c;
   while (kv)
     {
-      struct cons *key = kv->first;	// must be a symbol, for now.
+      struct cons *key = kv->first.c;	// must be a symbol, for now.
       kv = kv->next;
-      struct symbol *sym = key->first;
-      symbol_push (sym, interp_eval_box (kv->first));
+      struct symbol *sym = key->first.sym;
+      symbol_push (sym, interp_eval_box (kv->first.c));
       kv = kv->next;
     }
 
@@ -1391,7 +1389,7 @@ __special_html_gen__box_to_str (char **p_buff_cur, char *buff_limit,
 	}
       else if (specifier == &Q_KEYWORD)
 	{
-	  struct symbol *sym = c->first;
+	  struct symbol *sym = c->first.sym;
 	  strcat_rf (p_buff_cur, buff_limit, (sym->name) + 1);
 	  // + 1: skip the ':' at the beginning of the keyword.
 	}
@@ -1409,7 +1407,7 @@ __special_html_gen__box_to_str (char **p_buff_cur, char *buff_limit,
 	}
       else if (specifier == &Q_RGB3)
 	{
-	  struct rgb3 *x = (struct rgb3 *) c->first;
+	  struct rgb3 *x = (struct rgb3 *) c->first.p;
 	  int n;
 	  if ((n = snprintf (*p_buff_cur, buff_limit - (*p_buff_cur),
 			     "\"#%.2X%.2X%.2X\"", x->r, x->g, x->b)) >= 0)
@@ -1423,7 +1421,7 @@ __special_html_gen__box_to_str (char **p_buff_cur, char *buff_limit,
 	}
       else
 	{
-	  fprintf (stderr, "[Unknown Type] %p\n", c->first);
+	  fprintf (stderr, "[Unknown Type] %p\n", c->first.p);
 	}
     }
   return *p_buff_cur;
@@ -1436,24 +1434,23 @@ char *
 __special_html_gen__unit_to_str (char **p_buff_cur, char *buff_limit,
 				 struct cons *c)
 {
-  struct cons *tag = c->first;
+  struct cons *tag = c->first.c;
   strcat_rf (p_buff_cur, buff_limit, "<");
   __special_html_gen__box_to_str (p_buff_cur, buff_limit, tag);
   c = c->next;
-  /* struct cons* kv = ((struct cons*)  */
-  /*                 (interp_eval_box (c->first)->first))->first; */
-  if (c->first)
+  /* struct cons* kv = interp_eval_box (c->first.c)->first.c->first.c; */
+  if (c->first.p)
     {
-      struct cons *kv = ((struct cons *) (c->first))->first;
+      struct cons *kv = c->first.c->first.c;
 
       while (kv)
 	{
 	  strcat_rf (p_buff_cur, buff_limit, " ");
-	  __special_html_gen__box_to_str (p_buff_cur, buff_limit, kv->first);
+	  __special_html_gen__box_to_str (p_buff_cur, buff_limit, kv->first.c);
 	  kv = kv->next;
 	  strcat_rf (p_buff_cur, buff_limit, "=");
 	  strcat_rf (p_buff_cur, buff_limit, "\"");
-	  __special_html_gen__box_to_str (p_buff_cur, buff_limit, kv->first);
+	  __special_html_gen__box_to_str (p_buff_cur, buff_limit, kv->first.c);
 	  strcat_rf (p_buff_cur, buff_limit, "\"");
 	  kv = kv->next;
 	}
@@ -1462,7 +1459,7 @@ __special_html_gen__unit_to_str (char **p_buff_cur, char *buff_limit,
 
   for (c = c->next; c; c = c->next)
     {
-      __special_html_gen__form_to_str (p_buff_cur, buff_limit, c->first);
+      __special_html_gen__form_to_str (p_buff_cur, buff_limit, c->first.c);
     }
   strcat_rf (p_buff_cur, buff_limit, "</");
   __special_html_gen__box_to_str (p_buff_cur, buff_limit, tag);
@@ -1480,7 +1477,7 @@ __special_html_gen__form_to_str (char **p_buff_cur, char *buff_limit,
       struct cons *specifier = c->next;
       if (specifier == &Q_CONS)
 	{
-	  __special_html_gen__unit_to_str (p_buff_cur, buff_limit, c->first);
+	  __special_html_gen__unit_to_str (p_buff_cur, buff_limit, c->first.c);
 	}
       else if (specifier == &Q_STRING)
 	{
@@ -1488,7 +1485,7 @@ __special_html_gen__form_to_str (char **p_buff_cur, char *buff_limit,
 	}
       else if (specifier == &Q_SYMBOL)
 	{
-	  struct symbol *sym = c->first;
+	  struct symbol *sym = c->first.sym;
 	  // cons_introspect (*sym, level + 1, 0);
 	  strcat_rf (p_buff_cur, buff_limit, "'");
 	  strcat_rf (p_buff_cur, buff_limit, sym->name);
@@ -1507,7 +1504,7 @@ __special_html_gen__form_to_str (char **p_buff_cur, char *buff_limit,
 	}
       else if (specifier == &Q_RGB3)
 	{
-	  struct rgb3 *x = (struct rgb3 *) c->first;
+	  struct rgb3 *x = (struct rgb3 *) c->first.p;
 	  int n;
 	  if ((n = snprintf (*p_buff_cur, buff_limit - (*p_buff_cur),
 			     "\"#%.2X%.2X%.2X\"", x->r, x->g, x->b)) >= 0)
@@ -1521,7 +1518,7 @@ __special_html_gen__form_to_str (char **p_buff_cur, char *buff_limit,
 	}
       else
 	{
-	  fprintf (stderr, "[Unknown Type] %p\n", c->first);
+	  fprintf (stderr, "[Unknown Type] %p\n", c->first.p);
 	}
     }
   return *p_buff_cur;
@@ -1539,7 +1536,7 @@ _special_html_gen (struct cons *params)
   for (; params; params = params->next)
     {
       __special_html_gen__form_to_str (&buff_cur, buff_limit,
-				       interp_eval_box (params->first));
+				       interp_eval_box (params->first.c));
     }
 
   if (buff_cur)
@@ -1568,7 +1565,7 @@ struct cons *
 _special_funcall (struct cons *params)
 {
   // (apply f cons)
-  struct cons *f = interp_eval_box (params->first);
+  struct cons *f = interp_eval_box (params->first.c);
   return interp_call (f, params->next);
 }
 
@@ -1582,7 +1579,7 @@ _special_eval (struct cons *params)
 struct cons *
 _special_filter (struct cons *params)
 {
-  struct cons *f = params->first;
+  struct cons *f = params->first.c;
   params = params->next;
   if (!params)
     {
@@ -1590,18 +1587,18 @@ _special_filter (struct cons *params)
       return NULL;
     }
   struct cons *curs = cons_alloc (NULL, NULL);
-  struct cons *l = cons_unbox (params->first);	// must be a cons.
+  struct cons *l = cons_unbox (params->first.c);	// must be a cons.
   struct cons *args;
   for (; l; l = l->next)
     {
-      args = cons_alloc (l->first, NULL);
+      args = cons_alloc (l->first.p, NULL);
       if (interp_call_evaledparams (f, args))
 	{
-	  cons_insert_tail (curs, l->first);
+	  cons_insert_tail (curs, l->first.p);
 	}
       free (args);
     }
-  struct cons *result = cons_alloc (curs->first, &Q_CONS);
+  struct cons *result = cons_alloc (curs->first.p, &Q_CONS);
   free (curs);
   return result;
 }
@@ -1611,7 +1608,7 @@ _special_map (struct cons *params)
 {				// fn
   // (map f cons1 cons2 cons3)
 
-  struct cons *f = params->first;
+  struct cons *f = params->first.c;
   params = params->next;
   if (!params)
     {
@@ -1626,7 +1623,7 @@ _special_map (struct cons *params)
   params_a = calloc (n, sizeof (struct cons));
   for (i = 0; params; params = params->next)
     {
-      params_a[i++] = cons_unbox (params->first);
+      params_a[i++] = cons_unbox (params->first.c);
     }
 
   // *args is both an array and a linked list.
@@ -1645,7 +1642,7 @@ _special_map (struct cons *params)
 	{
 	  break;
 	}
-      args[i]->first = params_a[i]->first;
+      args[i]->first.p = params_a[i]->first.p;
       params_a[i] = params_a[i]->next;
 
       if ((++i) == n)
@@ -1654,7 +1651,7 @@ _special_map (struct cons *params)
 	  cons_insert_tail (curs, interp_call_evaledparams (f, *args));
 	}
     }
-  struct cons *result = cons_alloc (curs->first, &Q_CONS);
+  struct cons *result = cons_alloc (curs->first.p, &Q_CONS);
   free (curs);
   free (args);
   free (params_a);
@@ -1665,21 +1662,21 @@ struct cons *
 _special_apply (struct cons *params)
 {				// fn
   // (apply f x1 x2 cons)
-  struct cons *f = params->first;
+  struct cons *f = params->first.c;
   params = params->next;
   if (!params || !params->next)
     {
-      return interp_call_evaledparams (f, cons_unbox (params->first));
+      return interp_call_evaledparams (f, cons_unbox (params->first.c));
     }
   else
     {
       struct cons *args_curs = cons_alloc (NULL, NULL);
       for (; params->next; params = params->next)
 	{
-	  cons_insert_tail (args_curs, params->first);
+	  cons_insert_tail (args_curs, params->first.p);
 	}
-      args_curs->next->next = cons_unbox (params->first);
-      struct cons *args = args_curs->first;
+      args_curs->next->next = cons_unbox (params->first.c);
+      struct cons *args = args_curs->first.c;
       free (args_curs);
       return interp_call_evaledparams (f, args);
     }
@@ -1691,21 +1688,21 @@ _special_reduce (struct cons *params)
 {				// fn
   // (reduce f init-value cons)
 
-  struct cons *f = params->first;
+  struct cons *f = params->first.c;
   params = params->next;
   if (!params || !params->next)
     {
       fprintf (stderr, "Error: too few arguments to `reduce'\n");
     }
-  /* { return interp_call_evaledparams (f, cons_unbox (params->first)); } */
+  /* { return interp_call_evaledparams (f, cons_unbox (params->first.c)); } */
   else
     {
-      struct cons *result = params->first;
-      struct cons *l = cons_unbox (params->next->first);	// must be a cons.
+      struct cons *result = params->first.c;
+      struct cons *l = cons_unbox (params->next->first.c);	// must be a cons.
       for (; l; l = l->next)
 	{
 	  struct cons *args =
-	    cons_alloc (result, cons_alloc (l->first, NULL));
+	    cons_alloc (result, cons_alloc (l->first.p, NULL));
 	  result = interp_call_evaledparams (f, args);
 	  free (args->next);
 	  free (args);
@@ -1721,7 +1718,7 @@ _special_or (struct cons *params)
   struct cons *result;
   for (result = NULL; !result && params; params = params->next)
     {
-      result = interp_eval_box (params->first);
+      result = interp_eval_box (params->first.c);
     }
   return result;
 }
@@ -1732,7 +1729,7 @@ _special_and (struct cons *params)
   struct cons *result;
   for (result = &Q_VAL_NONNIL; result && params; params = params->next)
     {
-      result = interp_eval_box (params->first);
+      result = interp_eval_box (params->first.c);
     }
   return result;
 }
@@ -1824,7 +1821,7 @@ _special_time (struct cons *params)
   for (cur_time = gettimeofday_ts ();
        params; params = params->next, cur_time = new_time)
     {
-      result = interp_eval_box (params->first);
+      result = interp_eval_box (params->first.c);
       new_time = gettimeofday_ts ();
       fprintf (stderr, "Elapsed time: %s\n",
 	       timespec_to_str (timespec_minus (new_time, cur_time)));
@@ -1837,7 +1834,7 @@ _special_time (struct cons *params)
 struct cons *
 _special_exec (struct cons *params)
 {
-  char *program = string_unbox (params->first);
+  char *program = string_unbox (params->first.c);
   int i, n;
   char **argv = malloc (sizeof (char *) * 2);
   argv[0] = program;
@@ -1847,20 +1844,20 @@ _special_exec (struct cons *params)
   if (params)
     {
       struct cons *l;
-      if (consp (params->first))
+      if (consp (params->first.c))
 	{
-	  l = cons_unbox (params->first);
+	  l = cons_unbox (params->first.c);
 	  params = params->next;
 	}
       else
 	{
 	  struct cons *curs = cons_alloc (NULL, NULL);
-	  for (; params && !consp (params->first); params = params->next)
+	  for (; params && !consp (params->first.c); params = params->next)
 	    // { cons_insert_tail (curs, string_alloc (keyword_name)); }
 	    {
-	      cons_insert_tail (curs, params->first);
+	      cons_insert_tail (curs, params->first.p);
 	    }
-	  l = curs->first;
+	  l = curs->first.c;
 	  free (curs);
 	}
 
@@ -1869,7 +1866,7 @@ _special_exec (struct cons *params)
       argv = malloc (sizeof (char *) * (n + 1));
       for (i = 0; l; ++i, l = l->next)
 	{
-	  struct cons *item = l->first;
+	  struct cons *item = l->first.c;
 	  char *item_str;
 	  if (item->next == &Q_STRING)
 	    {
@@ -1896,14 +1893,14 @@ _special_exec (struct cons *params)
 	}
       argv[n] = (char *) 0;
 
-      if (params && consp (params->first))
+      if (params && consp (params->first.c))
 	{
-	  l = cons_unbox (params->first);
+	  l = cons_unbox (params->first.c);
 	  n = cons_count (l);
 	  envp = malloc (sizeof (char *) * (n + 1));
 	  for (i = 0; l; ++i, l = l->next)
 	    {
-	      envp[i] = string_unbox (l->first);
+	      envp[i] = string_unbox (l->first.c);
 	    }
 	  envp[n] = (char *) 0;
 	  params = params->next;
@@ -1926,8 +1923,8 @@ struct cons *
 _special_mod (struct cons *params)
 {
   // param must be Long for now.
-  struct cons *m = params->first;
-  struct cons *k = params->next->first;
+  struct cons *m = params->first.c;
+  struct cons *k = params->next->first.c;
   return long_alloc (long_unbox (m) % long_unbox (k));
 }
 
@@ -1935,7 +1932,7 @@ struct cons *
 _special_evenp (struct cons *params)
 {
   // param must be Long.
-  struct cons *param = params->first;
+  struct cons *param = params->first.c;
   if (long_unbox (param) & 1)
     {
       return NULL;
@@ -1947,7 +1944,7 @@ struct cons *
 _special_oddp (struct cons *params)
 {
   // param must be Long.
-  struct cons *param = params->first;
+  struct cons *param = params->first.c;
   if (long_unbox (param) & 1)
     {
       return param;

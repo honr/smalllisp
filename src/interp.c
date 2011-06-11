@@ -20,7 +20,7 @@ inline struct cons *
 symbol_push (struct symbol *sym, struct cons *value)
 {
   sym->vals = cons_alloc (value, sym->vals);
-  ctx->binding_stack->first = cons_alloc (sym, ctx->binding_stack->first);
+  ctx->binding_stack->first.c = cons_alloc (sym, ctx->binding_stack->first.c);
   // TODOD: we better return the symbol, though.
   return value;
 }
@@ -28,7 +28,7 @@ symbol_push (struct symbol *sym, struct cons *value)
 inline void
 symbol_pop (struct symbol *sym)
 {
-  struct cons *val = sym->vals->first;
+  struct cons *val = sym->vals->first.c;
   sym->vals = sym->vals->next;
   (void) val;
   // free val.
@@ -38,7 +38,7 @@ symbol_pop (struct symbol *sym)
 /* symbol_define_sym (struct cons **sym, struct cons *value) */
 /* { */
 /*   *sym = cons_alloc (value, *sym); */
-/*   ctx->binding_stack->first = cons_alloc (sym, ctx->binding_stack->first); */
+/*   ctx->binding_stack->first.p = cons_alloc (sym, ctx->binding_stack->first.p); */
 /*   // TODOD: we better return the symbol, though. */
 /*   return value; */
 /* } */
@@ -68,9 +68,9 @@ void
 binding_stack_pop ()
 {
   struct cons *c;
-  for (c = ctx->binding_stack->first; c; c = c->next)
+  for (c = ctx->binding_stack->first.c; c; c = c->next)
     {
-      symbol_pop (c->first);
+      symbol_pop (c->first.sym);
     }
   ctx->binding_stack = cons_pop (ctx->binding_stack);
 }
@@ -89,7 +89,7 @@ interp_eval_progn (struct cons *forms)
   struct cons *result;
   for (result = NULL; forms; forms = forms->next)
     {
-      result = interp_eval_box (forms->first);
+      result = interp_eval_box (forms->first.c);
     }
   return result;
 }
@@ -100,9 +100,9 @@ interp_eval_cons (struct cons *forms)
   struct cons *curs;
   for (curs = cons_alloc (NULL, NULL); forms; forms = forms->next)
     {
-      cons_insert_tail (curs, interp_eval_box (forms->first));
+      cons_insert_tail (curs, interp_eval_box (forms->first.c));
     }
-  struct cons *result = curs->first;
+  struct cons *result = curs->first.c;
   free (curs);
   return result;
 }
@@ -124,18 +124,18 @@ interp_call_evaledparams (struct cons *f, struct cons *params)
   if (specifier == &Q_FUNCTION_INTERP)
     {
       struct cons *(*f0) (struct cons * params);
-      f0 = f->first;
+      f0 = f->first.p;
       result = (*f0) (params);
     }
   else if (specifier == &Q_LAMBDA_INTERP)
     {
       binding_stack_push ();
-      struct fn_interp *l = f->first;
+      struct fn_interp *l = f->first.p;
       struct cons *keys;
       for (keys = l->params;
 	   keys && params; keys = keys->next, params = params->next)
 	{			// key must be a symbol, for now.
-	  symbol_push (symbol_unbox (keys->first), params->first);
+	  symbol_push (symbol_unbox (keys->first.c), params->first.c);
 	}
       if (keys || params)
 	{
@@ -147,8 +147,7 @@ interp_call_evaledparams (struct cons *f, struct cons *params)
     }
   else
     {
-      printf ("Error: tried to eval with type %s\n",
-	      (char *) specifier->first);
+      printf ("Error: tried to eval with type %s\n", specifier->first.s);
     }
   return result;
 }
@@ -170,25 +169,25 @@ interp_call (struct cons *f, struct cons *params)
   if (specifier == &Q_MACRO_INTERP)
     {
       struct cons *(*f0) (struct cons * params);
-      f0 = f->first;
+      f0 = f->first.p;
       result = (*f0) (params);
     }
   else if (specifier == &Q_FUNCTION_INTERP)
     {
       struct cons *(*f0) (struct cons * params);
-      f0 = f->first;
+      f0 = f->first.p;
       result = (*f0) (interp_eval_cons (params));
     }
   else if (specifier == &Q_LAMBDA_INTERP)
     {
       binding_stack_push ();
-      struct fn_interp *l = f->first;
+      struct fn_interp *l = f->first.p;
       struct cons *keys;
       for (keys = l->params;
 	   keys && params; keys = keys->next, params = params->next)
 	{			// key must be a symbol, for now.
-	  symbol_push (symbol_unbox (keys->first),
-		       interp_eval_box (params->first));
+	  symbol_push (symbol_unbox (keys->first.c),
+		       interp_eval_box (params->first.c));
 	}
       if (keys || params)
 	{
@@ -200,8 +199,7 @@ interp_call (struct cons *f, struct cons *params)
     }
   else
     {
-      printf ("Error: tried to eval with type %s\n",
-	      (char *) specifier->first);
+      printf ("Error: tried to eval with type %s\n", specifier->first.s);
     }
   return result;
 }
@@ -219,23 +217,23 @@ interp_eval_box (struct cons *form)
       struct cons *specifier = form->next;
       if (specifier == &Q_CONS)
 	{
-	  struct cons *c = form->first;
+	  struct cons *c = form->first.c;
 	  if (!c)
 	    {
 	      result = NULL;
 	    }
 	  else
 	    {
-	      // struct cons *c_first = interp_eval_box (c->first);
-	      result = interp_call (interp_eval_box (c->first), c->next);
+	      // struct cons *c_first = interp_eval_box (c->first.p);
+	      result = interp_call (interp_eval_box (c->first.c), c->next);
 	    }
 	}
       else if (specifier == &Q_SYMBOL)
 	{
-	  struct symbol *sym = form->first;
+	  struct symbol *sym = form->first.sym;
 	  if (sym->vals)
 	    {
-	      result = sym->vals->first;
+	      result = sym->vals->first.c;
 	    }
 	  else
 	    {
