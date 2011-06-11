@@ -25,7 +25,8 @@ main ()
     c = (struct cons *) curs->first.p;
     printf ("%d\n", *(int *) ((struct cons *) c->first.p)->first.p);
     printf ("%d\n", *(int *) ((struct cons *) c->next->first.p)->first.p);
-    printf ("%d\n", *(int *) ((struct cons *) c->next->next->first.p)->first.p);
+    printf ("%d\n",
+	    *(int *) ((struct cons *) c->next->next->first.p)->first.p);
     printf ("%d\n",
 	    *(int *) ((struct cons *) c->next->next->next->first.p)->first.p);
     printf ("--------------------\n");

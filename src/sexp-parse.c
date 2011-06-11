@@ -46,7 +46,8 @@ _sexp_parse__open (struct cons **stackp, struct bin **p_symbols,
     }
   else if (specifier == '\'')
     {
-      cons_insert_tail ((*stackp)->first.c, symbol_alloc (p_symbols, "quote"));
+      cons_insert_tail ((*stackp)->first.c,
+			symbol_alloc (p_symbols, "quote"));
     }
   else if (specifier == '`')
     {
@@ -93,18 +94,20 @@ _sexp_parse__token (struct cons **stackp, struct bin **p_symbols,
     }
 }
 
-struct longstack {
-  struct longstack* next;
-  union {
+struct longstack
+{
+  struct longstack *next;
+  union
+  {
     long z8;
     double y8;
     char ch[8];
-    void* pvoid;
+    void *pvoid;
   } val;
 };
 
-inline struct longstack* 
-longstack_alloc (long val, struct longstack* next)
+inline struct longstack *
+longstack_alloc (long val, struct longstack *next)
 {
   struct longstack *c = malloc (sizeof (struct longstack));
   c->val.z8 = val;
@@ -135,8 +138,8 @@ sexp_parse_str (struct bin **p_symbols, char *buf)
   struct longstack *parenstack, *prefixstack;
   for (buf_cur = buf, bufout_cur = bufout,	// set buffer cursors
        state = STATE_SPACE,	// initial state: whitespace
-       parenstack = NULL,       // start with empty stack.
-       prefixstack = NULL,    // stack to track number of prefixes
+       parenstack = NULL,	// start with empty stack.
+       prefixstack = NULL,	// stack to track number of prefixes
        c = ' ';			// anything other than 0.
        c;			// break after character 0 is sighted.
        ++buf_cur)
@@ -237,26 +240,35 @@ sexp_parse_str (struct bin **p_symbols, char *buf)
 	    }
 	  // paren_type = c;
 	  if (c == ')')
-	    { paren_type = '('; }
+	    {
+	      paren_type = '(';
+	    }
 	  else if (c == ']')
-	    { paren_type = '['; }
+	    {
+	      paren_type = '[';
+	    }
 	  else if (c == '}')
-	    { paren_type = '{'; }
+	    {
+	      paren_type = '{';
+	    }
 	  else
-	    { fprintf (stderr, "Error: unexpected paren type: %c\n", paren_type);
-	      exit (4); }
+	    {
+	      fprintf (stderr, "Error: unexpected paren type: %c\n",
+		       paren_type);
+	      exit (4);
+	    }
 	  state = STATE_SPACE;
 	}
       /* else if ((c == '\'') || (c == '`') || (c == '~'))
-	{
-	  action = ACTION_PASS | ACTION_PAREN | ACTION_UP | ACTION_PREFIX;
-	  if (state & STATE_TOKEN)
-	    {
-	      action |= ACTION_FLUSH | ACTION_TERM;
-	    }
-	  paren_type = c;
-	  state = STATE_SPACE;
-	  }*/
+         {
+         action = ACTION_PASS | ACTION_PAREN | ACTION_UP | ACTION_PREFIX;
+         if (state & STATE_TOKEN)
+         {
+         action |= ACTION_FLUSH | ACTION_TERM;
+         }
+         paren_type = c;
+         state = STATE_SPACE;
+         } */
       else
 	{
 	  if ((c == ',') || isspace (c))

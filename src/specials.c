@@ -501,8 +501,7 @@ __special_str__box_to_str (char **p_buff_cur, char *buff_limit,
 	{
 	  if ((buff_limit - *p_buff_cur) > MAX_NUMBER_STR_SIZE)
 	    {
-	      number_to_str (*p_buff_cur, c);
-	      *p_buff_cur = *p_buff_cur + strlen (*p_buff_cur);
+	      *p_buff_cur = *p_buff_cur + number_to_str (*p_buff_cur, c);
 	    }
 	  else
 	    {
@@ -650,7 +649,7 @@ struct cons *
 _special_quote (struct cons *params)
 {
   // TODO: test.
-  return params->first.c;		// (params, &Q_CONS);
+  return params->first.c;	// (params, &Q_CONS);
 }
 
 struct cons *
@@ -698,7 +697,8 @@ _special_quote_eval (struct cons *params)
 		       &Q_VAL_UNQUOTE))
 		    {
 		      cons_insert_tail (out_stack->first.c,
-					interp_eval_box (subcons->next->first.c));
+					interp_eval_box (subcons->next->first.
+							 c));
 		      in_cur = in_cur->next;
 		    }
 		  else if (symbolp (subcons_first) &&
@@ -706,7 +706,7 @@ _special_quote_eval (struct cons *params)
 			   (symbol_unbox (subcons_first)->vals->first.c ==
 			    &Q_VAL_UNQUOTE_LIST))
 		    {
-		      struct cons *q = 
+		      struct cons *q =
 			interp_eval_box (subcons->next->first.c)->first.p;
 		      for (; q; q = q->next)
 			{
@@ -735,9 +735,8 @@ _special_quote_eval (struct cons *params)
 	  in_stack = cons_pop (in_stack);
 	  if (in_stack)
 	    {
-	      struct cons *res =
-		cons_alloc (out_stack->first.c->first.p,
-			    &Q_CONS);
+	      struct cons *res = cons_alloc (out_stack->first.c->first.p,
+					     &Q_CONS);
 	      free (out_stack->first.p);
 	      out_stack = cons_pop (out_stack);
 	      cons_insert_tail (out_stack->first.c, res);
@@ -1446,11 +1445,13 @@ __special_html_gen__unit_to_str (char **p_buff_cur, char *buff_limit,
       while (kv)
 	{
 	  strcat_rf (p_buff_cur, buff_limit, " ");
-	  __special_html_gen__box_to_str (p_buff_cur, buff_limit, kv->first.c);
+	  __special_html_gen__box_to_str (p_buff_cur, buff_limit,
+					  kv->first.c);
 	  kv = kv->next;
 	  strcat_rf (p_buff_cur, buff_limit, "=");
 	  strcat_rf (p_buff_cur, buff_limit, "\"");
-	  __special_html_gen__box_to_str (p_buff_cur, buff_limit, kv->first.c);
+	  __special_html_gen__box_to_str (p_buff_cur, buff_limit,
+					  kv->first.c);
 	  strcat_rf (p_buff_cur, buff_limit, "\"");
 	  kv = kv->next;
 	}
@@ -1477,7 +1478,8 @@ __special_html_gen__form_to_str (char **p_buff_cur, char *buff_limit,
       struct cons *specifier = c->next;
       if (specifier == &Q_CONS)
 	{
-	  __special_html_gen__unit_to_str (p_buff_cur, buff_limit, c->first.c);
+	  __special_html_gen__unit_to_str (p_buff_cur, buff_limit,
+					   c->first.c);
 	}
       else if (specifier == &Q_STRING)
 	{

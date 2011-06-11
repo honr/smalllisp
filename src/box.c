@@ -7,9 +7,12 @@
 struct cons Q_STRING = {.first.p = "String",.next = NULL };
 struct cons Q_CONS = {.first.p = "Cons",.next = NULL };
 struct cons Q_MACRO_INTERP = {.first.p = "Macro (interpretee)",.next = NULL };
+
 struct cons Q_FUNCTION_INTERP = {.first.p = "Function (interpretee)",.next =
+    NULL
+};
+struct cons Q_LAMBDA_INTERP = {.first.p = "Lambda (interpretee)",.next =
     NULL };
-struct cons Q_LAMBDA_INTERP = {.first.p = "Lambda (interpretee)",.next = NULL };
 struct cons Q_SYMBOL = {.first.p = "Symbol",.next = NULL };
 struct cons Q_KEYWORD = {.first.p = "Keyword",.next = NULL };
 

@@ -5,9 +5,10 @@
 #include <stdlib.h>
 
 /* unary cell */
-union quan {
-  struct cons* c;
-  void* p;
+union quan
+{
+  struct cons *c;
+  void *p;
   unsigned char u1;
   unsigned short u2;
   unsigned int u4;
@@ -18,8 +19,8 @@ union quan {
   long z8;
   float y4;
   double y8;
-  char* s;
-  struct symbol* sym;
+  char *s;
+  struct symbol *sym;
 };
 
 struct cons
