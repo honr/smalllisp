@@ -1,5 +1,4 @@
 #include "interp.h"
-#include "cons.h"
 #include "box.h"
 #include <stdlib.h>
 #include <string.h>

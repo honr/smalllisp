@@ -1,13 +1,37 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "cons.h"
 #include "box.h"
 
 int
 main ()
 {
-  printf ("cons-alloc:\n");
+
+  {
+    struct cons *c;
+    printf ("cons-alloc:\n");
+
+    c = int_alloc (0x10);
+    c = cons_alloc (c, NULL);	// make a list out of it
+    printf ("%d\n", *(int *) ((struct cons *) c->first)->first);
+    printf ("--------------------\n");
+
+    printf ("cons-insert-tail:\n");
+    struct cons *curs = cons_alloc (NULL, NULL);
+    cons_insert_tail (curs, int_alloc (10));
+    cons_insert_tail (curs, int_alloc (20));
+    cons_insert_tail (curs, int_alloc (30));
+    cons_insert_tail (curs, int_alloc (40));
+    c = (struct cons *) curs->first;
+    printf ("%d\n", *(int *) ((struct cons *) c->first)->first);
+    printf ("%d\n", *(int *) ((struct cons *) c->next->first)->first);
+    printf ("%d\n", *(int *) ((struct cons *) c->next->next->first)->first);
+    printf ("%d\n",
+	    *(int *) ((struct cons *) c->next->next->next->first)->first);
+    printf ("--------------------\n");
+  }
+
+  printf ("cons-alloc2:\n");
   struct cons *c =		// (798 "foo")
     cons_alloc (int_alloc (798),
 		cons_alloc (string_alloc ("foo"),

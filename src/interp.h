@@ -1,7 +1,6 @@
 #ifndef INTERP_H
 #define INTERP_H
 
-#include "cons.h"
 #include "box.h"
 #include "sexp-parse.h"
 
