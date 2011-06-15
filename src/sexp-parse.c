@@ -94,48 +94,13 @@ _sexp_parse__token (struct cons **stackp, struct bin **p_symbols,
     }
 }
 
-struct longstack
-{
-  struct longstack *next;
-  union
-  {
-    long z8;
-    double y8;
-    char ch[8];
-    void *pvoid;
-  } val;
-};
-
-inline struct longstack *
-longstack_alloc (long val, struct longstack *next)
-{
-  struct longstack *c = malloc (sizeof (struct longstack));
-  c->val.z8 = val;
-  c->next = next;
-  return c;
-}
-
-inline struct longstack *
-longstack_pop (struct longstack *c)
-{
-  // frees the first cell, returns the rest.
-  struct longstack *r;
-  if (c)
-    {
-      r = c->next;
-      free (c);
-      return r;
-    }
-  return NULL;
-}
-
 struct cons *
 sexp_parse_str (struct bin **p_symbols, char *buf)
 {
   struct cons *stack = cons_alloc (cons_alloc (NULL, NULL), NULL);
   char c, *buf_cur, *bufout_cur, *bufout = malloc (BUFF_SIZE);
   char state, action, specifier = 0, specifier_next, paren_type;
-  struct longstack *parenstack, *prefixstack;
+  struct cons *parenstack, *prefixstack;
   for (buf_cur = buf, bufout_cur = bufout,	// set buffer cursors
        state = STATE_SPACE,	// initial state: whitespace
        parenstack = NULL,	// start with empty stack.
@@ -348,18 +313,19 @@ sexp_parse_str (struct bin **p_symbols, char *buf)
 	  if (action & ACTION_UP)
 	    {
 	      _sexp_parse__open (&stack, p_symbols, paren_type);
-	      parenstack = longstack_alloc ((long) paren_type, parenstack);
+	      parenstack = cons_alloc (NULL, parenstack);
+	      parenstack->first.z1 = paren_type;
 	    }
 	  else
 	    {
 	      _sexp_parse__close (&stack, p_symbols);
-	      if ((char) parenstack->val.z8 != paren_type)
+	      if (parenstack->first.z1 != paren_type)
 		{
 		  fprintf (stderr, "Error: mismatched parenthesis %c vs %c\n",
-			   (char) parenstack->val.z8, paren_type);
+			   parenstack->first.z1, paren_type);
 		  exit (1);
 		}
-	      parenstack = longstack_pop (parenstack);
+	      parenstack = cons_pop (parenstack);
 	    }
 	}
     }

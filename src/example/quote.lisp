@@ -5,6 +5,7 @@
 (println)
 (println)
 (println (str (quote-eval (:a :b (unquote (+ 1 2 3))))))
+(println (str (` (:a :b (~ (+ 1 2 3))))))
 ;; (println (quote-eval (:a (1 (unquote (+ 1 2 3))))))
 
 
