@@ -16,101 +16,151 @@
 #define STATE_COMMENT 0x08
 // maybe comment = space | escape ?
 
-#define ACTION_HOLD   0x00	// hold onto current char.
-#define ACTION_PASS   0x01	// skip over current char.
-#define ACTION_FLUSH  0x02	// flush previous chunk into bufout
-#define ACTION_BEGIN  0x04	// start the chunk.
-#define ACTION_TERM   0x08	// terminate the chunk.
-#define ACTION_PAREN  0x10	// paren
-#define ACTION_PREFIX 0x20	// paren
-#define ACTION_UP     0x80	// paren/... up
-
 #define TOKEN_STRING  'S'
 #define TOKEN_SYMBOL  'Y'
-#define TOKEN_NUMBER  'N'
-#define TOKEN_NUMBER_MAYBE  'M'
-// could also be '(', ')'.
 
-inline void
-_sexp_parse__open (struct cons **stackp, struct bin **p_symbols,
-		   char specifier)
-{
-  *stackp = cons_alloc (cons_alloc (NULL, NULL), *stackp);
-  if (specifier == '[')
-    {
-      cons_insert_tail ((*stackp)->first.c, string_alloc ("vector"));
-    }
-  else if (specifier == '{')
-    {
-      cons_insert_tail ((*stackp)->first.c, string_alloc ("hash-map"));
-    }
-  else if (specifier == '\'')
-    {
-      cons_insert_tail ((*stackp)->first.c,
-			symbol_alloc (p_symbols, "quote"));
-    }
-  else if (specifier == '`')
-    {
-      cons_insert_tail ((*stackp)->first.c,
-			symbol_alloc (p_symbols, "quote-eval"));
-    }
-  else if (specifier == '~')
-    {
-      cons_insert_tail ((*stackp)->first.c,
-			symbol_alloc (p_symbols, "unquote"));
-    }
-}
-
-inline void
-_sexp_parse__close (struct cons **stackp, struct bin **p_symbols)
-{
-  struct cons *stack = *stackp;
-  struct cons *c = cons_alloc (stack->first.c->first.p, &Q_CONS);
-  free (stack->first.p);
-  *stackp = cons_pop (stack);
-  cons_insert_tail ((*stackp)->first.c, c);
-}
-
-inline void
-_sexp_parse__token (struct cons **stackp, struct bin **p_symbols,
-		    char specifier, char *token)
-{
-  if (specifier == TOKEN_SYMBOL)
-    {
-      cons_insert_tail ((*stackp)->first.c, symbol_alloc (p_symbols, token));
-    }
-  else if (specifier == TOKEN_STRING)
-    {
-      cons_insert_tail ((*stackp)->first.c, string_alloc (token));
-    }
-  else if (specifier == TOKEN_NUMBER)
-    {
-      cons_insert_tail ((*stackp)->first.c, number_alloc (token));
-      free (token);
-    }
-  else
-    {
-      fprintf (stderr, "%c:%s, WTF?!\n", specifier, token);
-    }
-}
+#define PAREN_FRAGILE  0x0100
+// paren is fragile
 
 struct cons *
 sexp_parse_str (struct bin **p_symbols, char *buf)
 {
   struct cons *stack = cons_alloc (cons_alloc (NULL, NULL), NULL);
   char c, *buf_cur, *bufout_cur, *bufout = malloc (BUFF_SIZE);
-  char state, action, specifier = 0, specifier_next, paren_type;
-  struct cons *parenstack, *prefixstack;
+  char state, specifier = 0, specifier_next, paren_type;
+  struct cons *parenstack;
+
+  inline void action_pass ()
+  {
+    ++buf;
+  }
+
+  inline void action_begin ()
+  {
+    specifier = specifier_next;
+  }
+
+  inline void action_token_flush ()	// copy or flush
+  {
+    memcpy (bufout_cur, buf, buf_cur - buf);
+    bufout_cur += buf_cur - buf;
+    buf = buf_cur;
+  }
+
+  inline void action_paren_open ()
+  {
+    int paren_fragilep = 0;
+    stack = cons_alloc (cons_alloc (NULL, NULL), stack);
+    if (paren_type == '[')
+      {
+	cons_insert_tail (stack->first.c, symbol_alloc (p_symbols, "vector"));
+      }
+    else if (paren_type == '{')
+      {
+	cons_insert_tail (stack->first.c,
+			  symbol_alloc (p_symbols, "hash-map"));
+      }
+    else if (paren_type == '\'')
+      {
+	paren_fragilep = PAREN_FRAGILE;
+	paren_type = '(';
+	cons_insert_tail (stack->first.c, symbol_alloc (p_symbols, "quote"));
+      }
+    else if (paren_type == '`')
+      {
+	paren_fragilep = PAREN_FRAGILE;
+	paren_type = '(';
+	cons_insert_tail (stack->first.c,
+			  symbol_alloc (p_symbols, "quote-eval"));
+      }
+    else if (paren_type == '~')
+      {
+	paren_fragilep = PAREN_FRAGILE;
+	paren_type = '(';
+	cons_insert_tail (stack->first.c,
+			  symbol_alloc (p_symbols, "unquote"));
+      }
+
+    parenstack = cons_alloc (NULL, parenstack);
+    parenstack->first.z2 = paren_type | paren_fragilep;
+  }
+
+  inline void action_paren_close ()
+  {
+    // _sexp_parse__close (&stack, p_symbols);
+    //
+    struct cons *stack_old = stack;
+    struct cons *c = cons_alloc (stack_old->first.c->first.p, &Q_CONS);
+    free (stack_old->first.p);
+    stack = cons_pop (stack_old);
+    cons_insert_tail (stack->first.c, c);
+    //
+
+    if ((parenstack->first.z2 & 0xFF) != paren_type)
+      {
+	fprintf (stderr, "Error: mismatched parenthesis %c vs %c\n",
+		 parenstack->first.z2 & 0xFF, paren_type);
+	exit (1);
+      }
+    parenstack = cons_pop (parenstack);
+  }
+
+  inline void action_prefix_close ()
+  {
+    while (parenstack->first.z2 & PAREN_FRAGILE)
+      {
+	action_paren_close ();
+      }
+  }
+
+  inline void action_token_terminate ()
+  {
+    action_token_flush ();
+
+    // extract and copy current token from bufout.
+    int token_len = bufout_cur - bufout;
+    char *token = malloc (token_len + 1);
+    memcpy (token, bufout, token_len);
+    token[token_len] = 0;
+    bufout_cur = bufout;	// move cursor to the beginning
+
+    if (specifier == TOKEN_SYMBOL)
+      {
+	if (isdigit (token[0]) ||
+	    ((token[0] == '.') && (isdigit (token[1]))) ||
+	    (((token[0] == '-') || (token[0] == '+')) &&
+	     (isdigit (token[1]) || ((token[1] == '.') &&
+				     (isdigit (token[2]))))))
+	  {
+	    cons_insert_tail (stack->first.c, number_alloc (token));
+	    free (token);
+	  }
+	else
+	  {
+	    cons_insert_tail (stack->first.c,
+			      symbol_alloc (p_symbols, token));
+	  }
+      }
+    else if (specifier == TOKEN_STRING)
+      {
+	cons_insert_tail (stack->first.c, string_alloc (token));
+      }
+    else
+      {
+	fprintf (stderr, "%c:%s, WTF?!\n", specifier, token);
+      }
+
+    action_prefix_close ();
+  }
+
   for (buf_cur = buf, bufout_cur = bufout,	// set buffer cursors
        state = STATE_SPACE,	// initial state: whitespace
        parenstack = NULL,	// start with empty stack.
-       prefixstack = NULL,	// stack to track number of prefixes
        c = ' ';			// anything other than 0.
        c;			// break after character 0 is sighted.
        ++buf_cur)
     {
       c = *buf_cur;
-      action = 0;
 
       // State Transitions:
       if (c == 0)
@@ -124,13 +174,13 @@ sexp_parse_str (struct bin **p_symbols, char *buf)
 	    {
 	      if (state & STATE_STRING)
 		{
-		  fprintf (stderr,
-			   "Error: tried to extend quotation past EOF.\n");
+		  fprintf (stderr, "Error: reached EOF while in a string.\n");
 		  return NULL;
 		}
 	      else
 		{
-		  action = ACTION_PASS | ACTION_FLUSH | ACTION_TERM;
+		  action_token_terminate ();
+		  action_pass ();
 		}
 	    }
 	  // how about STATE_COMMENT ?
@@ -139,7 +189,7 @@ sexp_parse_str (struct bin **p_symbols, char *buf)
 	}
       else if (state & STATE_COMMENT)
 	{
-	  action = ACTION_PASS;
+	  action_pass ();
 	  if ((c == '\n') || (c == '\r'))
 	    {
 	      state = STATE_SPACE;
@@ -147,61 +197,66 @@ sexp_parse_str (struct bin **p_symbols, char *buf)
 	}
       else if (state & STATE_ESCAPE)	// only in string
 	{
-	  action = ACTION_HOLD;
+	  // action_hold (); // do nothing!
 	  state ^= STATE_ESCAPE;
 	}
       else if (state & STATE_STRING)
 	{
 	  if (c == '"')
 	    {
-	      action = ACTION_FLUSH | ACTION_TERM | ACTION_PASS;
+	      action_token_terminate ();
+	      action_pass ();
 	      state = STATE_SPACE;
 	    }
 	  else if (c == '\\')
 	    {
-	      action = ACTION_FLUSH | ACTION_PASS;
+	      action_token_flush ();
+	      action_pass ();
 	      state |= STATE_ESCAPE;
 	    }
 	  else
 	    {
-	      action = ACTION_HOLD;
+	      // action_hold (); // do nothing
 	    }
 	}
       else if (c == ';')
 	{
-	  action = ACTION_PASS;
 	  if (state & STATE_TOKEN)
 	    {
-	      action |= ACTION_FLUSH | ACTION_TERM;
+	      action_token_terminate ();
 	    }
+	  action_pass ();
 	  state = STATE_COMMENT;
 	}
       else if (c == '"')
 	{
-	  action = ACTION_PASS | ACTION_BEGIN;
 	  specifier_next = TOKEN_STRING;
 	  if (state & STATE_TOKEN)
 	    {
-	      action |= ACTION_FLUSH | ACTION_TERM;
+	      action_token_terminate ();
 	    }
+	  action_begin ();
+	  action_pass ();
+
 	  state = STATE_TOKEN | STATE_STRING;
 	}
-      else if ((c == '(') || (c == '[') || (c == '{'))
+      else if ((c == '(') || (c == '[') || (c == '{') ||
+	       (c == '\'') || (c == '`') || (c == '~'))
 	{
-	  action = ACTION_PASS | ACTION_PAREN | ACTION_UP;
 	  if (state & STATE_TOKEN)
 	    {
-	      action |= ACTION_FLUSH | ACTION_TERM;
+	      action_token_terminate ();
 	    }
 	  paren_type = c;
+	  action_pass ();
+	  action_paren_open ();
 	  state = STATE_SPACE;
 	}
       else if ((c == ')') || (c == ']') || (c == '}'))
 	{
-	  action = ACTION_PASS | ACTION_PAREN;
 	  if (state & STATE_TOKEN)
 	    {
-	      action |= ACTION_FLUSH | ACTION_TERM;
+	      action_token_terminate ();
 	    }
 	  // paren_type = c;
 	  if (c == ')')
@@ -222,110 +277,31 @@ sexp_parse_str (struct bin **p_symbols, char *buf)
 		       paren_type);
 	      exit (4);
 	    }
+	  action_pass ();
+	  action_prefix_close ();
+	  action_paren_close ();
 	  state = STATE_SPACE;
 	}
-      /* else if ((c == '\'') || (c == '`') || (c == '~'))
-         {
-         action = ACTION_PASS | ACTION_PAREN | ACTION_UP | ACTION_PREFIX;
-         if (state & STATE_TOKEN)
-         {
-         action |= ACTION_FLUSH | ACTION_TERM;
-         }
-         paren_type = c;
-         state = STATE_SPACE;
-         } */
       else
 	{
 	  if ((c == ',') || isspace (c))
 	    {
-	      action = ACTION_PASS;
 	      if (state & STATE_TOKEN)
 		{
-		  action |= ACTION_FLUSH | ACTION_TERM;
+		  action_token_terminate ();
 		  state = STATE_SPACE;
 		}
+	      action_pass ();
 	    }
 	  else
 	    {
-	      action = ACTION_HOLD;
 	      if (state == STATE_SPACE)
 		{
 		  state = STATE_TOKEN;
-		  action |= ACTION_BEGIN;
-		  if (isdigit (c))
-		    {
-		      specifier_next = TOKEN_NUMBER;
-		    }
-		  else if ((c == '.') || (c == '-') || (c == '+'))
-		    {
-		      specifier_next = TOKEN_NUMBER_MAYBE;
-		    }
-		  else
-		    {
-		      specifier_next = TOKEN_SYMBOL;
-		    }
+		  specifier_next = TOKEN_SYMBOL;
+		  // we will later check if it is a number.
+		  action_begin ();
 		}
-	    }
-	}
-
-      if (action & ACTION_FLUSH)	// copy or flush
-	{
-	  memcpy (bufout_cur, buf, buf_cur - buf);
-	  bufout_cur += buf_cur - buf;
-	  buf = buf_cur;
-	}
-      if (action & ACTION_TERM)
-	{
-	  // extract and copy current token from bufout.
-	  int s_len = bufout_cur - bufout;
-	  char *s = malloc (s_len + 1);
-	  memcpy (s, bufout, s_len);
-	  s[s_len] = 0;
-	  bufout_cur = bufout;	// move cursor to the beginning
-
-	  if (specifier == TOKEN_NUMBER_MAYBE)
-	    {
-	      if (((s[0] == '.') && (isdigit (s[1]))) ||
-		  (((s[0] == '-') || (s[0] == '+')) &&
-		   (isdigit (s[1]) || ((s[1] == '.') && (isdigit (s[2]))))))
-		{
-		  specifier = TOKEN_NUMBER;
-		}
-	      else
-		{
-		  specifier = TOKEN_SYMBOL;
-		}
-	    }
-
-	  _sexp_parse__token (&stack, p_symbols, specifier, s);
-	  // _sexp_parse__close (&stack, p_symbols);
-	}
-      if (action & ACTION_BEGIN)
-	{
-	  specifier = specifier_next;
-	}
-      if (action & ACTION_PASS)
-	{
-	  buf++;
-	}
-      if (action & ACTION_PAREN)
-	{
-	  if (action & ACTION_UP)
-	    {
-	      _sexp_parse__open (&stack, p_symbols, paren_type);
-	      parenstack = cons_alloc (NULL, parenstack);
-	      parenstack->first.z1 = paren_type;
-	    }
-	  else
-	    {
-	      _sexp_parse__close (&stack, p_symbols);
-	      if (parenstack->first.z1 != paren_type)
-		{
-		  fprintf (stderr, "Error: mismatched parenthesis %c vs %c\n",
-			   parenstack->first.z1, paren_type);
-		  exit (1);
-		}
-	      parenstack = cons_pop (parenstack);
 	    }
 	}
     }

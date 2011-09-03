@@ -26,6 +26,8 @@
 
 * short term features
 
+** Namespaces and Modules
+
 ** Socket interface:
    - TCP listener and server. Design a whole DSL for socket interfaces
 ** Web interface:
